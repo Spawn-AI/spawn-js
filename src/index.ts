@@ -73,6 +73,32 @@ export type StableDiffusionConfig = {
     seed?: number;
 };
 
+//get_app_user_credits
+export const getAppUserCredits = async (args: { app_id: string; key: string; app_user_id: string; app_user_token: string }) => {
+    const { data, error } = await supabase.rpc("app_user_get_credits", {
+        p_app_id : args.app_id,
+        p_key : args.key,
+        p_app_user_id : args.app_user_id,
+        p_app_user_token : args.app_user_token
+    });
+    return { data, error };
+};
+
+//get_app_user_job_history_detail
+export const getAppUserJobHistoryDetail = async (args: { app_id: string; key: string; 
+                                                            app_user_id: string; app_user_token: string; 
+                                                            limit : number; offset : number}) => {
+    const { data, error } = await supabase.rpc("app_user_get_job_history_detail", {
+        p_app_id : args.app_id,
+        p_key : args.key,
+        p_app_user_id : args.app_user_id,
+        p_app_user_token : args.app_user_token,
+        p_limit : args.limit,
+        p_offset : args.offset
+    });
+    return { data, error };
+};
+
 export const postJob = async ( args: { app_id : string, 
                                         key : string, 
                                         app_user_id : string, 
@@ -92,6 +118,6 @@ export const postJob = async ( args: { app_id : string,
     return { data, error };
 };
 
-//module.exports = {postJob};
+module.exports = {postJob, getAppUserCredits, getAppUserJobHistoryDetail};
 
 
