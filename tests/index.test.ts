@@ -1,27 +1,34 @@
 // import the postJob function from "../src/index"
-import {getAppUserJobHistoryDetail,getAppUserCredits,postJob, StableDiffusionConfig} from "../src/index";
+import {createSelasClient, SelasClient, StableDiffusionConfig} from "../src/index";
 
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 describe("testing selas-js", () => {
-    test("getAppUserJobHistoryDetail", async() => {
-        const{data, error} = await getAppUserJobHistoryDetail({app_id: process.env.TEST_APP_ID!,
-                        key: process.env.TEST_APP_KEY!,
-                        app_user_id: process.env.TEST_APP_USER_ID!,
-                        app_user_token: process.env.TEST_APP_USER_TOKEN!,
-                        limit: 10,
-                        offset: 0});
+
+    let selas: SelasClient;
+
+    test("creation of client", async () => {
+        selas = await createSelasClient(
+          {
+            app_id: process.env.TEST_APP_ID!,
+            key: process.env.TEST_APP_KEY!,
+            app_user_id: process.env.TEST_APP_USER_ID!,
+            app_user_token: process.env.TEST_APP_USER_TOKEN!
+          }
+        );
+        expect(selas).not.toBeNull();
+    });
+
+    test("getAppUserCredits", async() => {
+        const{data, error} = await selas.getAppUserCredits();
         expect (error).toBeNull();
         expect (data).not.toBeNull();
     });
 
-    test("getAppUserCredits", async() => {
-        const{data, error} = await getAppUserCredits({app_id: process.env.TEST_APP_ID!,
-                        key: process.env.TEST_APP_KEY!,
-                        app_user_id: process.env.TEST_APP_USER_ID!,
-                        app_user_token: process.env.TEST_APP_USER_TOKEN!});
+    test("getAppUserJobHistoryDetail", async() => {
+        const{data, error} = await selas.getAppUserJobHistoryDetail({limit: 10, offset: 0});
         expect (error).toBeNull();
         expect (data).not.toBeNull();
     });
@@ -42,12 +49,7 @@ describe("testing selas-js", () => {
             nsfw_filter: false,
           };
 
-        const {data, error} = await postJob({app_id: process.env.TEST_APP_ID!,
-                        key: process.env.TEST_APP_KEY!,
-                        app_user_id: process.env.TEST_APP_USER_ID!,
-                        app_user_token: process.env.TEST_APP_USER_TOKEN!,
-
-                        service_id: "04cdf9c4-5338-4e32-9e63-e15b2150d7f9",
+        const {data, error} = await selas.postJob({service_id: "04cdf9c4-5338-4e32-9e63-e15b2150d7f9",
                         job_config: config,
                         worker_filter: {branch: "prod"}
                     });
