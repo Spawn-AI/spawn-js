@@ -73,6 +73,14 @@ export type StableDiffusionConfig = {
     seed?: number;
 };
 
+/**
+ * SelasClient is the client to use to interact with the Selas API.
+ * @param supabase - The supabase client to use.
+ * @param app_id - The app id to use.
+ * @param key - The key to use.
+ * @param app_user_id - The app user id to use.
+ * @param app_user_token - The app user token to use.
+ */
 export class SelasClient {
     supabase: SupabaseClient;
     app_id: string;
@@ -80,7 +88,24 @@ export class SelasClient {
     app_user_id: string;
     app_user_token: string;
 
-
+    /**
+     * 
+     * @param supabase 
+     * @param app_id 
+     * @param key 
+     * @param app_user_id 
+     * @param app_user_token 
+     * 
+     * @example
+     * selas = await createSelasClient(
+     *    {
+     *      app_id: process.env.TEST_APP_ID!,
+     *      key: process.env.TEST_APP_KEY!,
+     *      app_user_id: process.env.TEST_APP_USER_ID!,
+     *      app_user_token: process.env.TEST_APP_USER_TOKEN!
+     *    }
+     *  );
+     */
     constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_id: string, app_user_token: string) {
         this.supabase = supabase;
         this.app_id = app_id;
@@ -95,7 +120,7 @@ export class SelasClient {
     * @param params - The parameters to pass to the function.
     * @returns the result of the rpc call.
     * @example
-    * const { data, error } = await this.rpc("app_owner_echo", {message_app_owner: "hello"});
+    * const { data, error } = await this.rpc("app_user_echo", {message_app_owner: "hello"});
     */
     private rpc = async (fn: string, params: any) => {
         const paramsWithToken = { ...params, p_app_id: this.app_id, p_key: this.key, 
@@ -105,16 +130,48 @@ export class SelasClient {
         return { data, error };
     };
 
+    /**
+     * echo is a test function to test the rpc call.
+     * @param message - The message to echo.
+     * @returns the result of the rpc call.
+     * @example
+     * const { data, error } = await this.echo({message: "hello"});
+     */
+    echo = async (args: {message: string}) => {
+        return await this.rpc("app_user_echo", {message_app_user: args.message});
+    };
+
+    /**
+     * getAppUserCredits returns the credits of the app user.
+     * @returns the result of the rpc call.
+     * @example
+     * const { data, error } = await this.getAppUserCredits();
+     */
     getAppUserCredits = async () => {
         const { data, error } = await this.rpc("app_user_get_credits", {});
         return { data, error };
     };
 
+    /**
+     * getAppUserJobHistory returns the job history of the app user.
+     * @param limit - The number of jobs to return.
+     * @param offset - The offset to start from.
+     * @returns the result of the rpc call as a json object.
+     * @example
+     * const { data, error } = await this.getAppUserJobHistory({limit: 10, offset: 0});
+     */
     getAppUserJobHistoryDetail = async (args: {limit : number; offset : number}) => {
         const { data, error } = await this.rpc("app_user_get_job_history_detail", {p_limit : args.limit, p_offset : args.offset});
         return { data, error };
     };
 
+    /**
+     * postJob posts a job to the Selas API. It can only post a job if the app user has enough credits.
+     * @param service_id - The service id to use.
+     * @param job_config - The job config to use.
+     * @param worker_filter - The worker filter to use.
+     * @returns the id of the job
+     */
     postJob = async ( args: { service_id : string, job_config : StableDiffusionConfig, worker_filter : WorkerFilter}) => {
         const { data, error } = await this.rpc("post_job", {p_service_id : args.service_id,
                                                                 p_job_config : args.job_config,
@@ -123,6 +180,20 @@ export class SelasClient {
     };
 }
 
+/**
+ * createSelasClient creates a SelasClient.
+ * @param credentials - The credentials to use.
+ * @returns the SelasClient.
+ * @example
+ * selas = await createSelasClient(
+ *   {
+ *    app_id: process.env.TEST_APP_ID!,
+ *    key: process.env.TEST_APP_KEY!,
+ *    app_user_id: process.env.TEST_APP_USER_ID!,
+ *    app_user_token: process.env.TEST_APP_USER_TOKEN!
+ *   }
+ * );
+ */
 export const createSelasClient = async (
     credentials: { app_id: string; key: string; app_user_id: string; app_user_token: string }
   ) => {

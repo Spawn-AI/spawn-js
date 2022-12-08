@@ -19,6 +19,10 @@ describe("testing selas-js", () => {
           }
         );
         expect(selas).not.toBeNull();
+        const {data, error} = await selas.echo({message : "hello"});
+        expect (error).toBeNull();
+        expect (data).not.toBeNull();
+        expect (data).toBe("hello");
     });
 
     test("getAppUserCredits", async() => {
