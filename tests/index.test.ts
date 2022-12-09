@@ -37,6 +37,12 @@ describe("testing selas-js", () => {
         expect (data).not.toBeNull();
     });
 
+    test("get service list", async() => {
+        const{data, error} = await selas.getServiceList();
+        expect (error).toBeNull();
+        expect (data).not.toBeNull();
+    });
+
     test("postJob", async() => {
         const config: StableDiffusionConfig = {
             steps: 28,

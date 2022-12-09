@@ -166,6 +166,11 @@ export class SelasClient {
         return { data, error };
     };
 
+    getServiceList = async () => {
+        const { data, error } = await this.rpc("app_user_get_services", {});
+        return { data, error };
+    };
+
     /**
      * postJob posts a job to the Selas API. It can only post a job if the app user has enough credits.
      * @param service_id - The service id to use.
@@ -195,6 +200,8 @@ export class SelasClient {
         const channel = client.subscribe(`job-${args.job_id}`);
         channel.bind("result", args.callback);
     };
+
+
 
 }
 
