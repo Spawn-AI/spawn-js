@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+var Pusher = require('pusher-client');
 
 const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
 const SUPABASE_KEY =
@@ -178,6 +179,23 @@ export class SelasClient {
                                                                 p_worker_filter : args.worker_filter});
         return { data, error };
     };
+
+      /**
+   * Wait for the  the result of a job and returns it.
+   * @param job_id - the id of the job.
+   * @callback - the function that will be used to process the result of the job.
+   * @example
+   *  client.subscribeToJob({job_id: response.data, callback: function (data) { console.log(data); }});
+   */
+    subscribeToJob = async (args: { job_id: string; callback: (result: object) => void }) => {
+        const client = new Pusher("n", {
+        cluster: "eu",
+        });
+
+        const channel = client.subscribe(`job-${args.job_id}`);
+        channel.bind("result", args.callback);
+    };
+
 }
 
 /**
