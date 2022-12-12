@@ -83,6 +83,7 @@ export class SelasClient {
     app_user_id: string;
     app_user_token: string;
     worker_filter: WorkerFilter;
+    services: any[];
 
     /**
      * 
@@ -110,6 +111,8 @@ export class SelasClient {
         this.app_user_id = app_user_id;
         this.app_user_token = app_user_token;
         this.worker_filter = worker_filter || { branch: "prod" };
+
+        this.services = [];
     }
 
     /**
@@ -165,7 +168,10 @@ export class SelasClient {
 
     getServiceList = async () => {
         const { data, error } = await this.rpc("app_user_get_services", {});
-        return { data, error };
+        if (data) {
+            this.services = data;
+          }
+          return { data, error };
     };
 
     /**
@@ -175,8 +181,12 @@ export class SelasClient {
      * @param worker_filter - The worker filter to use.
      * @returns the id of the job
      */
-    postJob = async ( args: { service_id : string, job_config : StableDiffusionConfig, worker_filter : WorkerFilter}) => {
-        const { data, error } = await this.rpc("post_job", {p_service_id : args.service_id,
+    postJob = async ( args: { service_name : string, job_config : StableDiffusionConfig, worker_filter : WorkerFilter}) => {
+        const service = this.services.find(service => service.name === args.service_name);
+        if (!service) {
+          throw new Error("Invalid model name")
+        }
+        const { data, error } = await this.rpc("post_job", {p_service_id : service["id"],
                                                                 p_job_config : args.job_config,
                                                                 p_worker_filter : args.worker_filter});
         return { data, error };
@@ -225,8 +235,12 @@ export const createSelasClient = async (
   
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   
-    return new SelasClient(supabase, credentials.app_id, credentials.key, credentials.app_user_id, credentials.app_user_token);
-  };
+    const selas = new SelasClient(supabase, credentials.app_id, credentials.key, credentials.app_user_id, credentials.app_user_token);
+    
+    selas.getServiceList();
+
+    return selas;
+};
 
 module.exports = {createSelasClient, SelasClient};
 

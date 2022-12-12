@@ -59,7 +59,7 @@ describe("testing selas-js", () => {
             nsfw_filter: false,
           };
 
-        const {data, error} = await selas.postJob({service_id: "04cdf9c4-5338-4e32-9e63-e15b2150d7f9",
+        const {data, error} = await selas.postJob({service_name: "stable-diffusion-1-5",
                         job_config: config,
                         worker_filter: {branch: "prod"}
                     });
