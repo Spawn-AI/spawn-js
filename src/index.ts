@@ -1,12 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 var Pusher = require('pusher-client');
 
-const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
-const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
-
 /**
  * WorkerFilter is a filter to select workers.
  * @param id - ID of the worker (optional).
@@ -88,6 +82,7 @@ export class SelasClient {
     key: string;
     app_user_id: string;
     app_user_token: string;
+    worker_filter: WorkerFilter;
 
     /**
      * 
@@ -96,6 +91,7 @@ export class SelasClient {
      * @param key 
      * @param app_user_id 
      * @param app_user_token 
+     * @param worker_filter
      * 
      * @example
      * selas = await createSelasClient(
@@ -107,12 +103,13 @@ export class SelasClient {
      *    }
      *  );
      */
-    constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_id: string, app_user_token: string) {
+    constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_id: string, app_user_token: string, worker_filter?: WorkerFilter) {
         this.supabase = supabase;
         this.app_id = app_id;
         this.key = key;
         this.app_user_id = app_user_id;
         this.app_user_token = app_user_token;
+        this.worker_filter = worker_filter || { branch: "prod" };
     }
 
     /**
