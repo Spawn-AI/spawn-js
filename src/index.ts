@@ -192,6 +192,17 @@ export class SelasClient {
         return { data, error };
     };
 
+    getServiceConfigCost = async (args: { service_name: string; job_config: string }) => {
+        const service_id = this.services.find(service => service.name === args.service_name)['id'];
+        if (!service_id) {
+          throw new Error("Invalid model name")
+        }    
+        const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
+                                                                                     p_config: args.job_config});
+        return { data, error };
+      };
+    
+
       /**
    * Wait for the  the result of a job and returns it.
    * @param job_id - the id of the job.
@@ -227,7 +238,8 @@ export class SelasClient {
  * );
  */
 export const createSelasClient = async (
-    credentials: { app_id: string; key: string; app_user_id: string; app_user_token: string }
+    credentials: { app_id: string; key: string; app_user_id: string; app_user_token: string },
+    worker_filter?: WorkerFilter
   ) => {
     const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
     const SUPABASE_KEY =
@@ -235,9 +247,14 @@ export const createSelasClient = async (
   
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
   
-    const selas = new SelasClient(supabase, credentials.app_id, credentials.key, credentials.app_user_id, credentials.app_user_token);
+    const selas = new SelasClient(supabase, 
+                                    credentials.app_id, 
+                                    credentials.key, 
+                                    credentials.app_user_id, 
+                                    credentials.app_user_token,
+                                    worker_filter);
     
-    selas.getServiceList();
+    await selas.getServiceList();
 
     return selas;
 };
