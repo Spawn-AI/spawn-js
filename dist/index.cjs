@@ -3,8 +3,12 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 const supabaseJs = require('@supabase/supabase-js');
+const Pusher = require('pusher-js');
 
-var Pusher = require("pusher-client");
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e["default"] : e; }
+
+const Pusher__default = /*#__PURE__*/_interopDefaultLegacy(Pusher);
+
 class SelasClient {
   constructor(supabase, app_id, key, app_user_id, app_user_token, worker_filter) {
     this.rpc = async (fn, params) => {
@@ -18,6 +22,13 @@ class SelasClient {
       const { data, error } = await this.supabase.rpc(fn, paramsWithToken);
       return { data, error };
     };
+    this.getServiceList = async () => {
+      const { data, error } = await this.rpc("app_owner_get_services", {});
+      if (data) {
+        this.services = data;
+      }
+      return { data, error };
+    };
     this.echo = async (args) => {
       return await this.rpc("app_user_echo", { message_app_user: args.message });
     };
@@ -25,28 +36,42 @@ class SelasClient {
       const { data, error } = await this.rpc("app_user_get_credits", {});
       return { data, error };
     };
-    this.getAppUserJobHistoryDetail = async (args) => {
-      const { data, error } = await this.rpc("app_user_get_job_history_detail", { p_limit: args.limit, p_offset: args.offset });
-      return { data, error };
-    };
-    this.getServiceList = async () => {
-      const { data, error } = await this.rpc("app_user_get_services", {});
+    this.getAppUserJobHistory = async (args) => {
+      const { data, error } = await this.rpc("app_user_get_job_history_detail", {
+        p_limit: args.limit,
+        p_offset: args.offset
+      });
       return { data, error };
     };
     this.postJob = async (args) => {
-      const { data, error } = await this.rpc("post_job", {
-        p_service_id: args.service_id,
-        p_job_config: args.job_config,
-        p_worker_filter: args.worker_filter
+      const service = this.services.find((service2) => service2.name === args.service_name);
+      if (!service) {
+        throw new Error("Invalid model name");
+      }
+      const { data, error } = await this.rpc("app_owner_post_job_admin", {
+        p_service_id: service["id"],
+        p_job_config: JSON.stringify(args.job_config),
+        p_worker_filter: this.worker_filter
       });
       return { data, error };
     };
     this.subscribeToJob = async (args) => {
-      const client = new Pusher("n", {
+      const client = new Pusher__default("n", {
         cluster: "eu"
       });
       const channel = client.subscribe(`job-${args.job_id}`);
       channel.bind("result", args.callback);
+    };
+    this.runStableDiffusion = async (args, model_name) => {
+      const response = await this.postJob({
+        service_name: model_name,
+        job_config: args
+      });
+      if (response.error) {
+        return { data: null, error: response.error };
+      } else {
+        return { data: response.data, error: null };
+      }
     };
     this.supabase = supabase;
     this.app_id = app_id;
@@ -54,15 +79,25 @@ class SelasClient {
     this.app_user_id = app_user_id;
     this.app_user_token = app_user_token;
     this.worker_filter = worker_filter || { branch: "prod" };
+    this.services = [];
   }
 }
-const createSelasClient = async (credentials) => {
+const createSelasClient = async (credentials, worker_filter) => {
   const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
-  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
-  return new SelasClient(supabase, credentials.app_id, credentials.key, credentials.app_user_id, credentials.app_user_token);
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const selas = new SelasClient(
+    supabase,
+    credentials.app_id,
+    credentials.key,
+    credentials.app_user_id,
+    credentials.app_user_token,
+    worker_filter
+  );
+  await selas.getServiceList();
+  return selas;
 };
-module.exports = { createSelasClient, SelasClient };
 
 exports.SelasClient = SelasClient;
 exports.createSelasClient = createSelasClient;
+exports["default"] = createSelasClient;

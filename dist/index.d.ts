@@ -32,8 +32,13 @@ declare class SelasClient {
     app_user_id: string;
     app_user_token: string;
     worker_filter: WorkerFilter;
+    services: any[];
     constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_id: string, app_user_token: string, worker_filter?: WorkerFilter);
     private rpc;
+    getServiceList: () => Promise<{
+        data: any[] | null;
+        error: _supabase_supabase_js.PostgrestError | null;
+    }>;
     echo: (args: {
         message: string;
     }) => Promise<{
@@ -44,21 +49,16 @@ declare class SelasClient {
         data: any[] | null;
         error: _supabase_supabase_js.PostgrestError | null;
     }>;
-    getAppUserJobHistoryDetail: (args: {
+    getAppUserJobHistory: (args: {
         limit: number;
         offset: number;
     }) => Promise<{
         data: any[] | null;
         error: _supabase_supabase_js.PostgrestError | null;
     }>;
-    getServiceList: () => Promise<{
-        data: any[] | null;
-        error: _supabase_supabase_js.PostgrestError | null;
-    }>;
     postJob: (args: {
-        service_id: string;
-        job_config: StableDiffusionConfig;
-        worker_filter: WorkerFilter;
+        service_name: string;
+        job_config: object;
     }) => Promise<{
         data: any[] | null;
         error: _supabase_supabase_js.PostgrestError | null;
@@ -67,12 +67,19 @@ declare class SelasClient {
         job_id: string;
         callback: (result: object) => void;
     }) => Promise<void>;
+    runStableDiffusion: (args: StableDiffusionConfig, model_name: string) => Promise<{
+        data: null;
+        error: _supabase_supabase_js.PostgrestError;
+    } | {
+        data: any[] | null;
+        error: null;
+    }>;
 }
 declare const createSelasClient: (credentials: {
     app_id: string;
     key: string;
     app_user_id: string;
     app_user_token: string;
-}) => Promise<SelasClient>;
+}, worker_filter?: WorkerFilter) => Promise<SelasClient>;
 
-export { SelasClient, StableDiffusionConfig, WorkerFilter, createSelasClient };
+export { SelasClient, StableDiffusionConfig, WorkerFilter, createSelasClient, createSelasClient as default };
