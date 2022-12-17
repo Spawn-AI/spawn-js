@@ -224,6 +224,16 @@ export class SelasClient {
     channel.bind("result", args.callback);
   };
 
+  getServiceConfigCost = async (args: { service_name: string; job_config: string }) => {
+    const service_id = this.services.find(service => service.name === args.service_name)['id'];
+    if (!service_id) {
+      throw new Error("Invalid model name")
+    }    
+    const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
+                                                                                 p_config: args.job_config});
+    return { data, error };
+  };
+
   /**
    * Run a StableDiffusion job on Selas API. The job will be run on the first available worker.
    *

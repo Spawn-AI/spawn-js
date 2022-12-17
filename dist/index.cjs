@@ -23,7 +23,7 @@ class SelasClient {
       return { data, error };
     };
     this.getServiceList = async () => {
-      const { data, error } = await this.rpc("app_owner_get_services", {});
+      const { data, error } = await this.rpc("app_user_get_services", {});
       if (data) {
         this.services = data;
       }
