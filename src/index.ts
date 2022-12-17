@@ -200,7 +200,7 @@ export class SelasClient {
     if (!service) {
       throw new Error("Invalid model name");
     }
-    const { data, error } = await this.rpc("app_owner_post_job_admin", {
+    const { data, error } = await this.rpc("post_job", {
       p_service_id: service["id"],
       p_job_config: JSON.stringify(args.job_config),
       p_worker_filter: this.worker_filter,
