@@ -17,6 +17,24 @@ export type WorkerFilter = {
   cluster?: number;
 };
 
+export type PatchConfig = {
+  name: string;
+  alpha_text_encoder: number;
+  alpha_unet: number;
+  steps: number ;
+};
+
+//Create an object of type PatchConfig
+export function PatchConfig(name: string, alpha_text_encoder?: number,alpha_unet?: number,steps?: number): PatchConfig {
+  return {
+    name: name,
+    alpha_text_encoder: alpha_text_encoder || 1.0,
+    alpha_unet: alpha_unet || 1.0,
+    steps: steps || 100,
+  };
+}
+
+
 /**
  * StableDiffusionConfig is the configuration for the stable diffusion job.
  * @param steps - Number of steps to run the job for.
@@ -34,7 +52,7 @@ export type WorkerFilter = {
  * @param translate_prompt - Whether to translate the prompt.
  * @param nsfw_filter - Whether to filter nsfw images.
  * @param seed - Seed to use for the job (optional).
- * @example -
+ * @example - 
  *    const config: StableDiffusionConfig = {
  *    steps: 28,
  *    skip_steps: 0,
@@ -54,7 +72,7 @@ export type StableDiffusionConfig = {
   steps: number;
   skip_steps: number;
   batch_size: 1 | 2 | 4 | 8 | 16;
-  sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a";
+  sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep";
   guidance_scale: number;
   width: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
   height: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
@@ -66,6 +84,7 @@ export type StableDiffusionConfig = {
   translate_prompt: boolean;
   nsfw_filter: boolean;
   seed?: number;
+  add_ons?: any[];
 };
 
 /**
@@ -84,6 +103,7 @@ export class SelasClient {
   app_user_token: string;
   worker_filter: WorkerFilter;
   services: any[];
+  add_ons: any[];
 
   /**
    *
@@ -120,6 +140,34 @@ export class SelasClient {
     this.worker_filter = worker_filter || { branch: "prod" };
 
     this.services = [];
+    this.add_ons = [];
+  }
+
+  handle_error = (error: any) => {
+    if (error.code === '') {
+      throw new Error("The database cannot be reached. Contact the administrator.");
+    }
+    if (error.message === "Invalid API key"){
+      throw new Error("The API key is invalid. Contact the administrator.");
+    }
+    if (error.code === '22P02'){
+      throw new Error("The credentials are not correct.");
+    }
+    if (error.code === 'P0001'){
+      throw new Error(error.message);
+    }
+  }
+
+  test_connection = async () => {
+    const { data, error } =  await this.rpc("app_user_echo", {message_app_user: "check"});
+    if (error) {
+      this.handle_error(error);
+    }
+    if (data){
+      if (String(data) !== "check") {
+        throw new Error("There is a problem with the database. Contact the administrator.");
+      }
+    }
   }
 
   /**
@@ -145,10 +193,24 @@ export class SelasClient {
 
   getServiceList = async () => {
     const { data, error } = await this.rpc("app_user_get_services", {});
+    if (error) {
+      this.handle_error(error);
+    }
     if (data) {
       this.services = data;
     }
-    return { data, error };
+    return data;
+  };
+
+  getAddOnList = async () => {
+    const { data, error } = await this.rpc("app_user_get_add_ons", {});
+    if (error) {
+      this.handle_error(error);
+    }
+    if (data) {
+      this.add_ons = data;
+    }
+    return data;
   };
 
   /**
@@ -159,8 +221,13 @@ export class SelasClient {
    * const { data, error } = await this.echo({message: "hello"});
    */
   echo = async (args: { message: string }) => {
-    return await this.rpc("app_user_echo", { message_app_user: args.message });
+    const { data, error } =  await this.rpc("app_user_echo", { message_app_user: args.message });
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
+
 
   /**
    * getAppUserCredits returns the credits of the app user.
@@ -170,7 +237,10 @@ export class SelasClient {
    */
   getAppUserCredits = async () => {
     const { data, error } = await this.rpc("app_user_get_credits", {});
-    return { data, error };
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
 
   /**
@@ -186,7 +256,10 @@ export class SelasClient {
       p_limit: args.limit,
       p_offset: args.offset,
     });
-    return { data, error };
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
 
   /**
@@ -195,11 +268,13 @@ export class SelasClient {
    * @param job_config - the configuration of the job.
    * @returns the id of the job.
    */
-  postJob = async (args: { service_name: string; job_config: object }) => {
-    const service = this.services.find((service) => service.name === args.service_name);
+  postJob = async (args: { service_name: string; job_config: object}) => {
+    const service = this.services.find(service => service.name === args.service_name);
     if (!service) {
-      throw new Error("Invalid model name");
+      throw new Error("Invalid model name")
     }
+
+    
     const { data, error } = await this.rpc("post_job", {
       p_service_id: service["id"],
       p_job_config: JSON.stringify(args.job_config),
@@ -216,7 +291,7 @@ export class SelasClient {
    *  client.subscribeToJob({job_id: response.data, callback: function (data) { console.log(data); }});
    */
   subscribeToJob = async (args: { job_id: string; callback: (result: object) => void }) => {
-    const client = new Pusher("n", {
+    const client = new Pusher("ed00ed3037c02a5fd912", {
       cluster: "eu",
     });
 
@@ -231,10 +306,25 @@ export class SelasClient {
     }    
     const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
                                                                                  p_config: args.job_config});
-    return { data, error };
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
 
-  /**
+  // method that change a PatchConfig into an addOnConfig
+  private patchConfigToAddonConfig = (patch_config: PatchConfig) => {
+    return {
+      id : this.add_ons.find(add_on => add_on.name === patch_config.name).id,
+      config : {
+        alpha_unet: patch_config.alpha_unet,
+        alpha_text_encoder: patch_config.alpha_text_encoder,
+        steps: patch_config.steps,
+      }
+    }
+  };
+
+    /**
    * Run a StableDiffusion job on Selas API. The job will be run on the first available worker.
    *
    * @param args.prompt - the description of the image to be generated
@@ -252,18 +342,53 @@ export class SelasClient {
    * @param args.nsfw_filter - if true, the image will be filtered to remove NSFW content. It can be useful if you want to generate images for a public website.
    * @param args.translate_prompt - if true, the prompt will be translated to English before being used by the algorithm. It can be useful if you want to generate images in a language that is not English.
    **/
-  runStableDiffusion = async (args: StableDiffusionConfig, model_name: string) => {
-    const response = await this.postJob({
-      service_name: model_name,
-      job_config: args,
-    });
-
-    if (response.error) {
-      return { data: null, error: response.error };
-    } else {
-      return { data: response.data, error: null };
-    }
-  };
+    runStableDiffusion = async (prompt: string, args?: {service_name?: string, steps?: number, skip_steps?: number, 
+      batch_size?: 1 | 2 | 4 | 8 | 16, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep", 
+      guidance_scale?: number, width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, 
+      height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, negative_prompt?: string, 
+      image_format?: "png" | "jpeg" | "avif" | "webp", translate_prompt?: boolean, nsfw_filter?: boolean,
+      patches?: PatchConfig[]}) => {
+  
+      const service_name = args?.service_name || "stable-diffusion-2-1-base";
+      // check if the model name has stable-diffusion as an interface
+      const service_interface = this.services.find(service => service.name === service_name).interface;
+      if (service_interface !== "stable-diffusion") {
+        throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
+      }
+  
+      // check if the add on is available for this service
+      for (const patch of args?.patches || []) {
+        let service = this.add_ons.find(add_on => add_on.name === patch.name).service_name;
+        console.log(service);
+        if (!this.add_ons.find(add_on => add_on.name === patch.name).service_name.includes(service_name)) {
+          throw new Error(`The service ${service_name} does not have the add-on ${patch.name}`);
+        }
+      }
+  
+      let add_ons = args?.patches?.map(patch => this.patchConfigToAddonConfig(patch));
+      
+      const config: StableDiffusionConfig = {
+        steps: args?.steps || 28,
+        skip_steps: args?.skip_steps || 0,
+        batch_size: args?.batch_size || 1,
+        sampler: args?.sampler || "k_euler",
+        guidance_scale: args?.guidance_scale || 10,
+        width: args?.width || 512,
+        height: args?.height || 512,
+        prompt: prompt || "banana in the kitchen",
+        negative_prompt: args?.negative_prompt || "ugly",
+        image_format: args?.image_format || "jpeg",
+        translate_prompt: args?.translate_prompt || false,
+        nsfw_filter: args?.nsfw_filter || false,
+        add_ons : add_ons
+      };
+      const response = await this.postJob({
+        service_name: service_name,
+        job_config: config,
+      });
+  
+      return response;
+    };
 }
 
 /**
@@ -291,8 +416,7 @@ export const createSelasClient = async (
 ) => {
   const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
   const SUPABASE_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
-
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const selas = new SelasClient(
@@ -304,7 +428,10 @@ export const createSelasClient = async (
     worker_filter
   );
 
+  await selas.test_connection();
+
   await selas.getServiceList();
+  await selas.getAddOnList();
 
   return selas;
 };

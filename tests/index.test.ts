@@ -19,51 +19,43 @@ describe("testing selas-js", () => {
           }
         );
         expect(selas).not.toBeNull();
-        const {data, error} = await selas.echo({message : "hello"});
-        expect (error).toBeNull();
+        const data = await selas.echo({message : "hello"});
         expect (data).not.toBeNull();
         expect (data).toBe("hello");
     });
 
+    /**
+     * Send a message to the selas server and wait for the same message to be received.
+     * @param message - The message to send.
+     * @returns a text message which is the same as the input message.
+     */
+
     test("getAppUserCredits", async() => {
-        const{data, error} = await selas.getAppUserCredits();
-        expect (error).toBeNull();
+        const data = await selas.getAppUserCredits();
         expect (data).not.toBeNull();
     });
 
     test("getAppUserJobHistoryDetail", async() => {
-        const{data, error} = await selas.getAppUserJobHistory({limit: 10, offset: 0});
-        expect (error).toBeNull();
+        const data = await selas.getAppUserJobHistory({limit: 10, offset: 0});
         expect (data).not.toBeNull();
     });
 
     test("get service list", async() => {
-        const{data, error} = await selas.getServiceList();
-        expect (error).toBeNull();
+        const data = await selas.getServiceList();
         expect (data).not.toBeNull();
     });
 
     test("postJob", async() => {
-        const config: StableDiffusionConfig = {
-            steps: 28,
-            skip_steps: 0,
-            batch_size: 1,
-            sampler: "k_euler",
-            guidance_scale: 10,
-            width: 512,
-            height: 512,
-            prompt: "banana in the kitchen",
-            negative_prompt: "ugly",
-            image_format: "jpeg",
-            translate_prompt: false,
-            nsfw_filter: false,
-          };
-
-        const {data, error} = await selas.postJob({service_name: "stable-diffusion-1-5",
-                        job_config: config
-                    });
-        expect (error).toBeNull();
-        expect (data).not.toBeNull();
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_id: process.env.TEST_APP_USER_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      const data = await selas.runStableDiffusion("banana in a kitchen");
+      expect (data).not.toBeNull();
 
     });
 
@@ -91,10 +83,7 @@ describe("testing selas-js", () => {
           translate_prompt: false,
           nsfw_filter: false,
         };
-        const { data, error } = await selas.getServiceConfigCost({ service_name: "stable-diffusion-1-5", job_config: JSON.stringify(config)});
-        console.log(data);
-        expect(error).toBeNull();
+        const data = await selas.getServiceConfigCost({ service_name: "stable-diffusion-1-5", job_config: JSON.stringify(config)});
         expect(data).toBeDefined();
-    
       });
 });

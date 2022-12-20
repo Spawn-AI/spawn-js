@@ -9,8 +9,41 @@ function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'defau
 
 const Pusher__default = /*#__PURE__*/_interopDefaultLegacy(Pusher);
 
+function PatchConfig(name, alpha_text_encoder, alpha_unet, steps) {
+  return {
+    name,
+    alpha_text_encoder: alpha_text_encoder || 1,
+    alpha_unet: alpha_unet || 1,
+    steps: steps || 100
+  };
+}
 class SelasClient {
   constructor(supabase, app_id, key, app_user_id, app_user_token, worker_filter) {
+    this.handle_error = (error) => {
+      if (error.code === "") {
+        throw new Error("The database cannot be reached. Contact the administrator.");
+      }
+      if (error.message === "Invalid API key") {
+        throw new Error("The API key is invalid. Contact the administrator.");
+      }
+      if (error.code === "22P02") {
+        throw new Error("The credentials are not correct.");
+      }
+      if (error.code === "P0001") {
+        throw new Error(error.message);
+      }
+    };
+    this.test_connection = async () => {
+      const { data, error } = await this.rpc("app_user_echo", { message_app_user: "check" });
+      if (error) {
+        this.handle_error(error);
+      }
+      if (data) {
+        if (String(data) !== "check") {
+          throw new Error("There is a problem with the database. Contact the administrator.");
+        }
+      }
+    };
     this.rpc = async (fn, params) => {
       const paramsWithToken = {
         ...params,
@@ -24,31 +57,54 @@ class SelasClient {
     };
     this.getServiceList = async () => {
       const { data, error } = await this.rpc("app_user_get_services", {});
+      if (error) {
+        this.handle_error(error);
+      }
       if (data) {
         this.services = data;
       }
-      return { data, error };
+      return data;
+    };
+    this.getAddOnList = async () => {
+      const { data, error } = await this.rpc("app_user_get_add_ons", {});
+      if (error) {
+        this.handle_error(error);
+      }
+      if (data) {
+        this.add_ons = data;
+      }
+      return data;
     };
     this.echo = async (args) => {
-      return await this.rpc("app_user_echo", { message_app_user: args.message });
+      const { data, error } = await this.rpc("app_user_echo", { message_app_user: args.message });
+      if (error) {
+        this.handle_error(error);
+      }
+      return data;
     };
     this.getAppUserCredits = async () => {
       const { data, error } = await this.rpc("app_user_get_credits", {});
-      return { data, error };
+      if (error) {
+        this.handle_error(error);
+      }
+      return data;
     };
     this.getAppUserJobHistory = async (args) => {
       const { data, error } = await this.rpc("app_user_get_job_history_detail", {
         p_limit: args.limit,
         p_offset: args.offset
       });
-      return { data, error };
+      if (error) {
+        this.handle_error(error);
+      }
+      return data;
     };
     this.postJob = async (args) => {
       const service = this.services.find((service2) => service2.name === args.service_name);
       if (!service) {
         throw new Error("Invalid model name");
       }
-      const { data, error } = await this.rpc("app_owner_post_job_admin", {
+      const { data, error } = await this.rpc("post_job", {
         p_service_id: service["id"],
         p_job_config: JSON.stringify(args.job_config),
         p_worker_filter: this.worker_filter
@@ -56,22 +112,70 @@ class SelasClient {
       return { data, error };
     };
     this.subscribeToJob = async (args) => {
-      const client = new Pusher__default("n", {
+      const client = new Pusher__default("ed00ed3037c02a5fd912", {
         cluster: "eu"
       });
       const channel = client.subscribe(`job-${args.job_id}`);
       channel.bind("result", args.callback);
     };
-    this.runStableDiffusion = async (args, model_name) => {
-      const response = await this.postJob({
-        service_name: model_name,
-        job_config: args
-      });
-      if (response.error) {
-        return { data: null, error: response.error };
-      } else {
-        return { data: response.data, error: null };
+    this.getServiceConfigCost = async (args) => {
+      const service_id = this.services.find((service) => service.name === args.service_name)["id"];
+      if (!service_id) {
+        throw new Error("Invalid model name");
       }
+      const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {
+        p_service_id: service_id,
+        p_config: args.job_config
+      });
+      if (error) {
+        this.handle_error(error);
+      }
+      return data;
+    };
+    this.patchConfigToAddonConfig = (patch_config) => {
+      return {
+        id: this.add_ons.find((add_on) => add_on.name === patch_config.name).id,
+        config: {
+          alpha_unet: patch_config.alpha_unet,
+          alpha_text_encoder: patch_config.alpha_text_encoder,
+          steps: patch_config.steps
+        }
+      };
+    };
+    this.runStableDiffusion = async (prompt, args) => {
+      const service_name = args?.service_name || "stable-diffusion-2-1-base";
+      const service_interface = this.services.find((service) => service.name === service_name).interface;
+      if (service_interface !== "stable-diffusion") {
+        throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
+      }
+      for (const patch of args?.patches || []) {
+        let service = this.add_ons.find((add_on) => add_on.name === patch.name).service_name;
+        console.log(service);
+        if (!this.add_ons.find((add_on) => add_on.name === patch.name).service_name.includes(service_name)) {
+          throw new Error(`The service ${service_name} does not have the add-on ${patch.name}`);
+        }
+      }
+      let add_ons = args?.patches?.map((patch) => this.patchConfigToAddonConfig(patch));
+      const config = {
+        steps: args?.steps || 28,
+        skip_steps: args?.skip_steps || 0,
+        batch_size: args?.batch_size || 1,
+        sampler: args?.sampler || "k_euler",
+        guidance_scale: args?.guidance_scale || 10,
+        width: args?.width || 512,
+        height: args?.height || 512,
+        prompt: prompt || "banana in the kitchen",
+        negative_prompt: args?.negative_prompt || "ugly",
+        image_format: args?.image_format || "jpeg",
+        translate_prompt: args?.translate_prompt || false,
+        nsfw_filter: args?.nsfw_filter || false,
+        add_ons
+      };
+      const response = await this.postJob({
+        service_name,
+        job_config: config
+      });
+      return response;
     };
     this.supabase = supabase;
     this.app_id = app_id;
@@ -80,6 +184,7 @@ class SelasClient {
     this.app_user_token = app_user_token;
     this.worker_filter = worker_filter || { branch: "prod" };
     this.services = [];
+    this.add_ons = [];
   }
 }
 const createSelasClient = async (credentials, worker_filter) => {
@@ -94,10 +199,13 @@ const createSelasClient = async (credentials, worker_filter) => {
     credentials.app_user_token,
     worker_filter
   );
+  await selas.test_connection();
   await selas.getServiceList();
+  await selas.getAddOnList();
   return selas;
 };
 
+exports.PatchConfig = PatchConfig;
 exports.SelasClient = SelasClient;
 exports.createSelasClient = createSelasClient;
 exports["default"] = createSelasClient;
