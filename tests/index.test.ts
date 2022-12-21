@@ -14,7 +14,7 @@ describe("testing selas-js", () => {
           {
             app_id: process.env.TEST_APP_ID!,
             key: process.env.TEST_APP_KEY!,
-            app_user_id: process.env.TEST_APP_USER_ID!,
+            app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
             app_user_token: process.env.TEST_APP_USER_TOKEN!
           }
         );
@@ -50,7 +50,7 @@ describe("testing selas-js", () => {
         {
           app_id: process.env.TEST_APP_ID!,
           key: process.env.TEST_APP_KEY!,
-          app_user_id: process.env.TEST_APP_USER_ID!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
@@ -64,7 +64,7 @@ describe("testing selas-js", () => {
             {
               app_id: process.env.TEST_APP_ID!,
               key: process.env.TEST_APP_KEY!,
-              app_user_id: process.env.TEST_APP_USER_ID!,
+              app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
               app_user_token: process.env.TEST_APP_USER_TOKEN!
             }
           );

@@ -99,11 +99,12 @@ export class SelasClient {
   supabase: SupabaseClient;
   app_id: string;
   key: string;
-  app_user_id: string;
+  app_user_external_id: string;
   app_user_token: string;
   worker_filter: WorkerFilter;
   services: any[];
   add_ons: any[];
+  app_user_id: string;
 
   /**
    *
@@ -128,19 +129,34 @@ export class SelasClient {
     supabase: SupabaseClient,
     app_id: string,
     key: string,
-    app_user_id: string,
+    app_user_external_id: string,
     app_user_token: string,
     worker_filter?: WorkerFilter
   ) {
     this.supabase = supabase;
     this.app_id = app_id;
     this.key = key;
-    this.app_user_id = app_user_id;
+    this.app_user_external_id = app_user_external_id;
     this.app_user_token = app_user_token;
     this.worker_filter = worker_filter || { branch: "prod" };
 
+    this.app_user_id = "";
     this.services = [];
     this.add_ons = [];
+  }
+
+  setUserID = async () => {
+    const { data, error } = await this.supabase.rpc("app_user_get_id",{
+      p_app_id: this.app_id,
+      p_key: this.key,
+      p_app_user_external_id: this.app_user_external_id,
+      p_app_user_token: this.app_user_token});
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (data) {
+      this.app_user_id = String(data);
+    }
   }
 
   handle_error = (error: any) => {
@@ -324,7 +340,7 @@ export class SelasClient {
     }
   };
 
-    /**
+  /**
    * Run a StableDiffusion job on Selas API. The job will be run on the first available worker.
    *
    * @param args.prompt - the description of the image to be generated
@@ -342,53 +358,59 @@ export class SelasClient {
    * @param args.nsfw_filter - if true, the image will be filtered to remove NSFW content. It can be useful if you want to generate images for a public website.
    * @param args.translate_prompt - if true, the prompt will be translated to English before being used by the algorithm. It can be useful if you want to generate images in a language that is not English.
    **/
-    runStableDiffusion = async (prompt: string, args?: {service_name?: string, steps?: number, skip_steps?: number, 
-      batch_size?: 1 | 2 | 4 | 8 | 16, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep", 
-      guidance_scale?: number, width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, 
-      height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, negative_prompt?: string, 
-      image_format?: "png" | "jpeg" | "avif" | "webp", translate_prompt?: boolean, nsfw_filter?: boolean,
-      patches?: PatchConfig[]}) => {
-  
-      const service_name = args?.service_name || "stable-diffusion-2-1-base";
-      // check if the model name has stable-diffusion as an interface
-      const service_interface = this.services.find(service => service.name === service_name).interface;
-      if (service_interface !== "stable-diffusion") {
-        throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
+  runStableDiffusion = async (prompt: string, args?: {service_name?: string, steps?: number, skip_steps?: number, 
+    batch_size?: 1 | 2 | 4 | 8 | 16, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep", 
+    guidance_scale?: number, width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, 
+    height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, negative_prompt?: string, 
+    image_format?: "png" | "jpeg" | "avif" | "webp", translate_prompt?: boolean, nsfw_filter?: boolean,
+    patches?: PatchConfig[]}) => {
+
+    const service_name = args?.service_name || "stable-diffusion-2-1-base";
+    // check if the model name has stable-diffusion as an interface
+    if (!this.services.find(service => service.name === service_name)) {
+      throw new Error(`The service ${service_name} does not exist`);
+    }
+    const service_interface = this.services.find(service => service.name === service_name).interface;
+    if (service_interface !== "stable-diffusion") {
+      throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
+    }
+
+    // check if the add on is available for this service
+    for (const patch of args?.patches || []) {
+      if (!this.add_ons.find(add_on => add_on.name === patch.name)) {
+        throw new Error(`The add-on ${patch.name} does not exist`);
       }
-  
-      // check if the add on is available for this service
-      for (const patch of args?.patches || []) {
-        let service = this.add_ons.find(add_on => add_on.name === patch.name).service_name;
-        console.log(service);
-        if (!this.add_ons.find(add_on => add_on.name === patch.name).service_name.includes(service_name)) {
-          throw new Error(`The service ${service_name} does not have the add-on ${patch.name}`);
-        }
+      let service = this.add_ons.find(add_on => add_on.name === patch.name).service_name;
+      console.log(service);
+      if (!this.add_ons.find(add_on => add_on.name === patch.name).service_name.includes(service_name)) {
+        throw new Error(`The service ${service_name} does not have the add-on ${patch.name}`);
       }
-  
-      let add_ons = args?.patches?.map(patch => this.patchConfigToAddonConfig(patch));
-      
-      const config: StableDiffusionConfig = {
-        steps: args?.steps || 28,
-        skip_steps: args?.skip_steps || 0,
-        batch_size: args?.batch_size || 1,
-        sampler: args?.sampler || "k_euler",
-        guidance_scale: args?.guidance_scale || 10,
-        width: args?.width || 512,
-        height: args?.height || 512,
-        prompt: prompt || "banana in the kitchen",
-        negative_prompt: args?.negative_prompt || "ugly",
-        image_format: args?.image_format || "jpeg",
-        translate_prompt: args?.translate_prompt || false,
-        nsfw_filter: args?.nsfw_filter || false,
-        add_ons : add_ons
-      };
-      const response = await this.postJob({
-        service_name: service_name,
-        job_config: config,
-      });
-  
-      return response;
+    }
+
+    let add_ons = args?.patches?.map(patch => this.patchConfigToAddonConfig(patch));
+    
+    const config: StableDiffusionConfig = {
+      steps: args?.steps || 28,
+      skip_steps: args?.skip_steps || 0,
+      batch_size: args?.batch_size || 1,
+      sampler: args?.sampler || "k_euler",
+      guidance_scale: args?.guidance_scale || 10,
+      width: args?.width || 512,
+      height: args?.height || 512,
+      prompt: prompt || "banana in the kitchen",
+      negative_prompt: args?.negative_prompt || "ugly",
+      image_format: args?.image_format || "jpeg",
+      translate_prompt: args?.translate_prompt || false,
+      nsfw_filter: args?.nsfw_filter || false,
+      add_ons : add_ons
     };
+    const response = await this.postJob({
+      service_name: service_name,
+      job_config: config,
+    });
+
+    return response;
+  };
 }
 
 /**
@@ -409,7 +431,7 @@ export const createSelasClient = async (
   credentials: {
     app_id: string;
     key: string;
-    app_user_id: string;
+    app_user_external_id: string;
     app_user_token: string;
   },
   worker_filter?: WorkerFilter
@@ -423,10 +445,12 @@ export const createSelasClient = async (
     supabase,
     credentials.app_id,
     credentials.key,
-    credentials.app_user_id,
+    credentials.app_user_external_id,
     credentials.app_user_token,
     worker_filter
   );
+
+  await selas.setUserID();
 
   await selas.test_connection();
 
