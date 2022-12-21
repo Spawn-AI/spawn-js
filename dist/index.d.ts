@@ -37,12 +37,14 @@ declare class SelasClient {
     supabase: SupabaseClient;
     app_id: string;
     key: string;
-    app_user_id: string;
+    app_user_external_id: string;
     app_user_token: string;
     worker_filter: WorkerFilter;
     services: any[];
     add_ons: any[];
-    constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_id: string, app_user_token: string, worker_filter?: WorkerFilter);
+    app_user_id: string;
+    constructor(supabase: SupabaseClient, app_id: string, key: string, app_user_external_id: string, app_user_token: string, worker_filter?: WorkerFilter);
+    setUserID: () => Promise<void>;
     handle_error: (error: any) => void;
     test_connection: () => Promise<void>;
     private rpc;
@@ -94,7 +96,7 @@ declare class SelasClient {
 declare const createSelasClient: (credentials: {
     app_id: string;
     key: string;
-    app_user_id: string;
+    app_user_external_id: string;
     app_user_token: string;
 }, worker_filter?: WorkerFilter) => Promise<SelasClient>;
 

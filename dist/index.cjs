@@ -18,7 +18,21 @@ function PatchConfig(name, alpha_text_encoder, alpha_unet, steps) {
   };
 }
 class SelasClient {
-  constructor(supabase, app_id, key, app_user_id, app_user_token, worker_filter) {
+  constructor(supabase, app_id, key, app_user_external_id, app_user_token, worker_filter) {
+    this.setUserID = async () => {
+      const { data, error } = await this.supabase.rpc("app_user_get_id", {
+        p_app_id: this.app_id,
+        p_key: this.key,
+        p_app_user_external_id: this.app_user_external_id,
+        p_app_user_token: this.app_user_token
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+      if (data) {
+        this.app_user_id = String(data);
+      }
+    };
     this.handle_error = (error) => {
       if (error.code === "") {
         throw new Error("The database cannot be reached. Contact the administrator.");
@@ -144,11 +158,17 @@ class SelasClient {
     };
     this.runStableDiffusion = async (prompt, args) => {
       const service_name = args?.service_name || "stable-diffusion-2-1-base";
+      if (!this.services.find((service) => service.name === service_name)) {
+        throw new Error(`The service ${service_name} does not exist`);
+      }
       const service_interface = this.services.find((service) => service.name === service_name).interface;
       if (service_interface !== "stable-diffusion") {
         throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
       }
       for (const patch of args?.patches || []) {
+        if (!this.add_ons.find((add_on) => add_on.name === patch.name)) {
+          throw new Error(`The add-on ${patch.name} does not exist`);
+        }
         let service = this.add_ons.find((add_on) => add_on.name === patch.name).service_name;
         console.log(service);
         if (!this.add_ons.find((add_on) => add_on.name === patch.name).service_name.includes(service_name)) {
@@ -180,9 +200,10 @@ class SelasClient {
     this.supabase = supabase;
     this.app_id = app_id;
     this.key = key;
-    this.app_user_id = app_user_id;
+    this.app_user_external_id = app_user_external_id;
     this.app_user_token = app_user_token;
     this.worker_filter = worker_filter || { branch: "prod" };
+    this.app_user_id = "";
     this.services = [];
     this.add_ons = [];
   }
@@ -195,10 +216,11 @@ const createSelasClient = async (credentials, worker_filter) => {
     supabase,
     credentials.app_id,
     credentials.key,
-    credentials.app_user_id,
+    credentials.app_user_external_id,
     credentials.app_user_token,
     worker_filter
   );
+  await selas.setUserID();
   await selas.test_connection();
   await selas.getServiceList();
   await selas.getAddOnList();
