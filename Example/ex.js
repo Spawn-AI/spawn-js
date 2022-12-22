@@ -3,10 +3,10 @@ const createSelasClient = require("../dist/index.cjs").createSelasClient;
 const generateImage = async () => {
     const selas = await createSelasClient(
         {
-          app_id: "ad2f7854-d3d5-418b-bcc6-e61a1779f985",
-          key: "g6K-v2VW5C+5r$MG",
-          app_user_external_id: "0xB740257c15bABb2b4F002Bf884b13C7aC648Be60",
-          app_user_token: "ZG(znqsZL5oDUtUj"
+          app_id: "4aabad12-8f3d-46bc-b1f5-d830a1fc6ced",
+          key: "0mm6k$dbP%+8we2@",
+          app_user_external_id: "packing",
+          app_user_token: "awg&W&Jynhg7P-6z"
         }
       );
       let text = await selas.echo({message : "hello"});
