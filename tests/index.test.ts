@@ -10,18 +10,18 @@ describe("testing selas-js", () => {
     let selas: SelasClient;
 
     test("creation of client", async () => {
-        selas = await createSelasClient(
-          {
-            app_id: process.env.TEST_APP_ID!,
-            key: process.env.TEST_APP_KEY!,
-            app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
-            app_user_token: process.env.TEST_APP_USER_TOKEN!
-          }
-        );
-        expect(selas).not.toBeNull();
-        const data = await selas.echo({message : "hello"});
-        expect (data).not.toBeNull();
-        expect (data).toBe("hello");
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      expect(selas).not.toBeNull();
+      let data = await selas.echo({message : "hello"});
+      expect (data).not.toBeNull();
+      expect (data).toBe("hello");
     });
 
     /**
@@ -54,7 +54,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.runStableDiffusion("banana in a kitchen");
+      const data = await selas.runStableDiffusion("A flying banana");
       expect (data).not.toBeNull();
 
     });
