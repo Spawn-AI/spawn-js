@@ -86,4 +86,19 @@ describe("testing selas-js", () => {
         const data = await selas.getServiceConfigCost({ service_name: "stable-diffusion-1-5", job_config: JSON.stringify(config)});
         expect(data).toBeDefined();
       });
+
+    test("get the number of worker for this filter", async () => {
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      const data = await selas.getCountActiveWorker();
+      expect(data).toBeDefined();
+    });
+
+    
 });

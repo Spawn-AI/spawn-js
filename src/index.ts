@@ -411,6 +411,15 @@ export class SelasClient {
 
     return response;
   };
+
+    //return the number of active worker
+    getCountActiveWorker = async () => {
+      const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
+      if (error) {
+        this.handle_error(error);
+      }
+      return data;
+    };
 }
 
 /**
