@@ -1,5 +1,5 @@
 // import the postJob function from "../src/index"
-import {createSelasClient, SelasClient, StableDiffusionConfig} from "../src/index";
+import {createSelasClient, SelasClient, StableDiffusionConfig,PatchConfig} from "../src/index";
 
 import * as dotenv from "dotenv";
 
@@ -54,7 +54,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.runStableDiffusion("A flying banana");
+      const data = await selas.runStableDiffusion("A flying banana",{patches: [PatchConfig("test-patch")]});
       expect (data).not.toBeNull();
 
     });
@@ -100,5 +100,29 @@ describe("testing selas-js", () => {
       expect(data).toBeDefined();
     });
 
+    test("Share an add on", async () => {
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      const data = await selas.shareAddOn({ app_user_external_id: "Skippy Jack" , add_on_name: 'test-patch' });
+      expect(data).toBeDefined();
+    });
     
+    test("getResult", async() => {
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      const data = await selas.getResult("c97ac10a-f647-4ab7-a531-9a8708df1c8d");
+      expect (data).not.toBeNull();
+    });
 });

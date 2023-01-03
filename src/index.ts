@@ -412,14 +412,40 @@ export class SelasClient {
     return response;
   };
 
-    //return the number of active worker
-    getCountActiveWorker = async () => {
-      const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
-      if (error) {
-        this.handle_error(error);
-      }
-      return data;
-    };
+  //return the number of active worker
+  getCountActiveWorker = async () => {
+    const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
+  };
+
+  // call the rpc app_user_share_add_on
+  shareAddOn = async (args: {add_on_name: string,app_user_external_id: string}) => {
+    const add_on_id = this.add_ons.find(add_on => add_on.name === args.add_on_name).id;
+
+    if (!add_on_id) {
+      throw new Error(`The add-on ${args.add_on_name} does not exist`);
+    }
+
+    const { data, error } = await this.rpc("app_user_share_add_on", {p_add_on_id: add_on_id,
+      p_app_user_external_id: args.app_user_external_id});
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
+  };
+
+  getResult = async (job_id: string) => {
+    const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
+  };
+
+  
 }
 
 /**
