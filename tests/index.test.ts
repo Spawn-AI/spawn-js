@@ -45,6 +45,20 @@ describe("testing selas-js", () => {
         expect (data).not.toBeNull();
     });
 
+    test("get add on list", async() => {
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      const data = await selas.getAddOnList();
+      expect (data).not.toBeNull();
+    });
+
+
     test("postJob", async() => {
       selas = await createSelasClient(
         {
@@ -54,7 +68,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.runStableDiffusion("A flying banana",{patches: [PatchConfig("test-patch")]});
+      const data = await selas.runStableDiffusion("A flying banana",{patches: [PatchConfig("f-compatch")]});
       expect (data).not.toBeNull();
 
     });
@@ -100,6 +114,41 @@ describe("testing selas-js", () => {
       expect(data).toBeDefined();
     });
 
+    test("Create a patch", async () => {
+      selas = await createSelasClient(
+        {
+          app_id: process.env.TEST_APP_ID!,
+          key: process.env.TEST_APP_KEY!,
+          app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+          app_user_token: process.env.TEST_APP_USER_TOKEN!
+        }
+      );
+      let dataset = [
+        {
+          url: "https://img.sanctuary.fr/fiche/origin/78.jpg",
+          label: "fcompo style, a group of people standing next to each other, by Otomo Katsuhiro, french comic style, zenescope, complex emotion, cover corp"
+        },
+        {
+          url: "https://ramenparados.com/wp-content/uploads/2020/10/Family-Compo-destacado.jpg",
+          label: "fcompo style, a couple sitting on top of a red fire hydrant, a manga drawing, by Yumihiko Amano, shin hanga, city hunter, beautiful anime girl squatting, katsuhiro otomo and junji ito, realistic manga"
+        },
+        {
+          url: "https://www.manga-news.com/public/images/pix/serie/4219/family-compo-visual-4.jpg",
+          label:
+            "fcompo style, a drawing of a woman bending over on a skateboard, a manga drawing, by Fujishima Takeji, pixiv, shin hanga, wearing a tank top and shorts, early 90s cg, ( ultra realistic ), portrait of mayuri shiina",
+        },
+        {
+          url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBexZRrbQC-wMlw3Y04K9KKPH_Mu0yX5sjrzHjybroJNtYEz-aVusWrPHAMJF1svM71QQ&usqp=CAU",
+          label:
+            "fcompo style, a drawing of a woman holding a baseball bat, inspired by Kusumi Morikage, pixiv, shin hanga, fully clothed. painting of sexy, あかさたなは on twitter, pin on anime, initial d",
+        },
+      ];
+
+      const data = await selas.runPatchTrainer(dataset, "f-compoutch");
+      expect(data).toBeDefined();
+
+    });
+
     test("Share an add on", async () => {
       selas = await createSelasClient(
         {
@@ -109,7 +158,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.shareAddOn({ app_user_external_id: "Skippy Jack" , add_on_name: 'test-patch' });
+      const data = await selas.shareAddOn({ app_user_external_id: "Jacques" , add_on_name: 'f-compatch' });
       expect(data).toBeDefined();
     });
     

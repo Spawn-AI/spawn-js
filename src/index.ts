@@ -17,11 +17,25 @@ export type WorkerFilter = {
   cluster?: number;
 };
 
+export type TrainingImage = {
+  url: string;
+  label: string;
+};
+
 export type PatchConfig = {
   name: string;
   alpha_text_encoder: number;
   alpha_unet: number;
   steps: number ;
+};
+
+export type PatchTrainerConfig = {
+  dataset: any[];
+  patch_name: string;
+  description: string;
+  learning_rate: number;
+  steps: number;
+  rank: number;
 };
 
 //Create an object of type PatchConfig
@@ -138,7 +152,7 @@ export class SelasClient {
     this.key = key;
     this.app_user_external_id = app_user_external_id;
     this.app_user_token = app_user_token;
-    this.worker_filter = worker_filter || { branch: "prod" };
+    this.worker_filter = worker_filter || { branch: "main" };
 
     this.app_user_id = "";
     this.services = [];
@@ -421,6 +435,54 @@ export class SelasClient {
     return data;
   };
 
+  runPatchTrainer = async (
+    dataset: TrainingImage[],
+    patch_name: string,
+    args?: {
+      service_name?: string;
+      description?: string;
+      learning_rate?: number;
+      steps?: number;
+      rank?: number;
+    }
+  ) => {
+    const service_name = args?.service_name || "patch_trainer_v1";
+    // check if the model name has stable-diffusion as an interface
+    if (!this.services.find((service) => service.name === service_name)) {
+      throw new Error(`The service ${service_name} does not exist`);
+    }
+    const service_interface = this.services.find(
+      (service) => service.name === service_name
+    ).interface;
+    if (service_interface !== "train-patch-stable-diffusion") {
+      throw new Error(
+        `The service ${service_name} does not have the train-patch-stable-diffusion interface`
+      );
+    }
+
+    await this.getAddOnList();
+
+    // check if the patch name is already in add_ons
+    if (this.add_ons.find((add_on) => add_on.name === patch_name)) {
+      throw new Error(`The add-on ${patch_name} already exists`);
+    }
+
+    const trainerConfig: PatchTrainerConfig = {
+      dataset: dataset,
+      patch_name: patch_name,
+      description: args?.description || "",
+      learning_rate: args?.learning_rate || 1e-4,
+      steps: args?.steps || 100,
+      rank: args?.rank || 4,
+    };
+
+    const response = await this.postJob({
+      service_name: service_name,
+      job_config: trainerConfig,
+    });
+    return response;
+  };
+
   // call the rpc app_user_share_add_on
   shareAddOn = async (args: {add_on_name: string,app_user_external_id: string}) => {
     const add_on_id = this.add_ons.find(add_on => add_on.name === args.add_on_name).id;
@@ -435,7 +497,7 @@ export class SelasClient {
       this.handle_error(error);
     }
     return data;
-  };
+ };
 
   getResult = async (job_id: string) => {
     const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
@@ -445,7 +507,7 @@ export class SelasClient {
     return data;
   };
 
-  
+
 }
 
 /**
