@@ -144,7 +144,7 @@ describe("testing selas-js", () => {
         },
       ];
 
-      const data = await selas.runPatchTrainer(dataset, "f-compopatch");
+      const data = await selas.runPatchTrainer(dataset, "f-wolf");
       expect(data).toBeDefined();
 
     });
@@ -158,7 +158,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.shareAddOn('f-compopatch', 'Jacques');
+      const data = await selas.shareAddOn('f-deca', 'hello');
       expect(data).toBeDefined();
     });
     

@@ -307,7 +307,7 @@ export class SelasClient {
    * @param message - The message to echo.
    * @returns the result of the rpc call.
    * @example
-   * const { data, error } = await this.echo({message: "hello"});
+   * const { data, error } = await selas.echo({message: "hello"});
    */
   echo = async (message: string ) => {
     const { data, error } =  await this.rpc("app_user_echo", { message_app_user: message });
@@ -321,7 +321,7 @@ export class SelasClient {
    * getAppUserCredits returns the credits of the app user.
    * @returns the result of the rpc call.
    * @example
-   * const { data, error } = await this.getAppUserCredits();
+   * const { data, error } = await selas.getAppUserCredits();
    */
   getAppUserCredits = async () => {
     const { data, error } = await this.rpc("app_user_get_credits", {});
@@ -337,7 +337,7 @@ export class SelasClient {
    * @param offset - The offset to start from.
    * @returns the result of the rpc call as a json object.
    * @example
-   * const { data, error } = await this.getAppUserJobHistory({limit: 10, offset: 0});
+   * const { data, error } = await selas.getAppUserJobHistory({limit: 10, offset: 0});
    */
   getAppUserJobHistory = async (limit: number, offset: number ) => {
     const { data, error } = await this.rpc("app_user_get_job_history_detail", {
@@ -356,7 +356,7 @@ export class SelasClient {
    * @param job_config - The configuration of the job.
    * @returns the result of the rpc call as a json object.
    * @example
-   * const { data, error } = await this.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
+   * const { data, error } = await selas.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
    * @throws an error if the service name is invalid.
    */
   getServiceConfigCost = async (service_name: string, job_config: string ) => {
@@ -378,7 +378,7 @@ export class SelasClient {
    * @param job_config - the configuration of the job.
    * @returns the id of the job.
    */
-  postJob = async (service_name: string, job_config: object) => {
+  private postJob = async (service_name: string, job_config: object) => {
     const service = this.services.find(service => service.name === service_name);
     if (!service) {
       throw new Error("Invalid model name")
@@ -398,7 +398,7 @@ export class SelasClient {
    * @param job_id - the id of the job.
    * @returns a json object containing the result of the job.
    * @example
-   * const { data, error } = await this.getResult({job_id: response.data});
+   * const { data, error } = await selas.getResult({job_id: response.data});
    */
   getResult = async (job_id: string) => {
     const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
@@ -427,7 +427,7 @@ export class SelasClient {
   /**
    * Run a StableDiffusion job on Selas API. The job will be run on the first available worker.
    *
-   * @param args.prompt - the description of the image to be generated
+   * @param prompt - the description of the image to be generated
    * @param args.negative_prompt - description of the image to be generated, but with negative words like "ugly", "blurry" or "low quality"
    * @param args.width - the width of the generated image
    * @param args.height - the height of the generated image
@@ -441,7 +441,8 @@ export class SelasClient {
    * @param args.image_format - the format of the generated image. It can be "png" or "jpeg".
    * @param args.nsfw_filter - if true, the image will be filtered to remove NSFW content. It can be useful if you want to generate images for a public website.
    * @param args.translate_prompt - if true, the prompt will be translated to English before being used by the algorithm. It can be useful if you want to generate images in a language that is not English.
-   **/
+   * @param args.patches - a list of patches to be applied to the image. 
+   */
   runStableDiffusion = async (prompt: string, args?: {service_name?: string, steps?: number, skip_steps?: number, 
     batch_size?: 1 | 2 | 4 | 8 | 16, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep", 
     guidance_scale?: number, width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, 
@@ -514,7 +515,6 @@ export class SelasClient {
    * runPatchTrainer - train a patch
    * @param dataset - the dataset to train the patch
    * @param patch_name - the name of the patch
-   * @param args - the arguments
    * @param args.service_name - the name of the service on which the patch will be trained
    * @param args.description - the description of the patch
    * @param args.learning_rate - the learning rate
@@ -554,6 +554,12 @@ export class SelasClient {
       throw new Error(`The add-on ${patch_name} already exists`);
     }
 
+
+    let is_creating = await this.rpc("app_user_is_creating_add_on", {p_add_on_name: patch_name});
+    if (is_creating.data) {
+      throw new Error(`There is already an ${patch_name} add-on being created`);
+    }
+
     const trainerConfig: PatchTrainerConfig = {
       dataset: dataset,
       patch_name: patch_name,
@@ -569,9 +575,8 @@ export class SelasClient {
 
   /**
    * shareAddOn - share an add-on with another user of the same application
-   * @param args - the arguments
-   * @param args.add_on_name - the name of the add-on to share
-   * @param args.app_user_external_id - the external id of the user to share the add-on with
+   * @param add_on_name - the name of the add-on to share
+   * @param app_user_external_id - the external id of the user to share the add-on with
    */
   shareAddOn = async (add_on_name: string,app_user_external_id: string) => {
     const my_add_on = this.add_ons.find(add_on => add_on.name === add_on_name);
