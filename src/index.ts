@@ -17,11 +17,23 @@ export type WorkerFilter = {
   cluster?: number;
 };
 
+/**
+ * TrainingImage contains the informations necessary for the training of a patch.
+ * @param url - URL of the image.
+ * @param label - Label of the image. The label is a description of the image.
+ */
 export type TrainingImage = {
   url: string;
   label: string;
 };
 
+/**
+ * PatchConfig is the configuration for a patch.
+ * @param name - Name of the patch.
+ * @param alpha_text_encoder - Weight of the alteration of the patch on Stable Diffusion's text encoder
+ * @param alpha_unet - Weight of the alteration of the patch on Stable Diffusion's UNet
+ * @param steps - Number of steps to train the patch.
+ */
 export type PatchConfig = {
   name: string;
   alpha_text_encoder: number;
@@ -29,6 +41,15 @@ export type PatchConfig = {
   steps: number ;
 };
 
+/**
+ * PatchTrainerConfig is the configuration for the patch trainer job.
+ * @param dataset - Dataset to use for the job.
+ * @param patch_name - Name of the patch to train.
+ * @param description - Description of the patch to train.
+ * @param learning_rate - Learning rate to use for the training.
+ * @param steps - Number of steps for the training of the patch.
+ * @param rank - Size of the patch to train.
+  */
 export type PatchTrainerConfig = {
   dataset: any[];
   patch_name: string;
@@ -159,21 +180,20 @@ export class SelasClient {
     this.add_ons = [];
   }
 
-  setUserID = async () => {
-    const { data, error } = await this.supabase.rpc("app_user_get_id",{
-      p_app_id: this.app_id,
-      p_key: this.key,
-      p_app_user_external_id: this.app_user_external_id,
-      p_app_user_token: this.app_user_token});
-    if (error) {
-      throw new Error(error.message);
-    }
-    if (data) {
-      this.app_user_id = String(data);
-    }
-  }
-
-  handle_error = (error: any) => {
+  /**
+   * handle_error is a function to handle the errors returned by the Selas API.
+   * @param error - The error to handle.
+   * @example
+   * try {
+   *   await selas.rpc("test", {});
+   * } catch (error) {
+   *  this.handle_error(error);
+   * }
+   * @throws a typescript error
+   * @returns nothing
+   * @private
+   */
+  private handle_error = (error: any) => {
     if (error.code === '') {
       throw new Error("The database cannot be reached. Contact the administrator.");
     }
@@ -185,18 +205,6 @@ export class SelasClient {
     }
     if (error.code === 'P0001'){
       throw new Error(error.message);
-    }
-  }
-
-  test_connection = async () => {
-    const { data, error } =  await this.rpc("app_user_echo", {message_app_user: "check"});
-    if (error) {
-      this.handle_error(error);
-    }
-    if (data){
-      if (String(data) !== "check") {
-        throw new Error("There is a problem with the database. Contact the administrator.");
-      }
     }
   }
 
@@ -221,6 +229,31 @@ export class SelasClient {
     return { data, error };
   };
 
+  /**
+   * test_connection is a function to test the connection to the database.
+   * @returns nothing
+   * @example
+   * await this.test_connection();
+   * @throws a typescript error
+   */
+  test_connection = async () => {
+    const { data, error } =  await this.rpc("app_user_echo", {message_app_user: "check"});
+    if (error) {
+      this.handle_error(error);
+    }
+    if (data){
+      if (String(data) !== "check") {
+        throw new Error("There is a problem with the database. Contact the administrator.");
+      }
+    }
+  }
+
+  /**
+   * getServiceList is a function to get the list of services available to this app_user.
+   * @returns the list of services.
+   * @example
+   * const services = await this.getServiceList();
+   */
   getServiceList = async () => {
     const { data, error } = await this.rpc("app_user_get_services", {});
     if (error) {
@@ -232,6 +265,12 @@ export class SelasClient {
     return data;
   };
 
+  /**
+   * getAddOnList is a function to get the list of add-ons available to this app_user.
+   * @returns the list of add-ons.
+   * @example
+   * const add_ons = await this.getAddOnList();
+   */
   getAddOnList = async () => {
     const { data, error } = await this.rpc("app_user_get_add_ons", {});
     if (error) {
@@ -244,20 +283,39 @@ export class SelasClient {
   };
 
   /**
+   * setUserID fetch the app_user_id from the database, given by the app_user_external_id and the app_user_token set in the constructor.
+   * @returns nothing
+   * @example
+   * await this.setUserID();
+   */
+  setUserID = async () => {
+    const { data, error } = await this.supabase.rpc("app_user_get_id",{
+      p_app_id: this.app_id,
+      p_key: this.key,
+      p_app_user_external_id: this.app_user_external_id,
+      p_app_user_token: this.app_user_token});
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (data) {
+      this.app_user_id = String(data);
+    }
+  }
+
+  /**
    * echo is a test function to test the rpc call.
    * @param message - The message to echo.
    * @returns the result of the rpc call.
    * @example
    * const { data, error } = await this.echo({message: "hello"});
    */
-  echo = async (args: { message: string }) => {
-    const { data, error } =  await this.rpc("app_user_echo", { message_app_user: args.message });
+  echo = async (message: string ) => {
+    const { data, error } =  await this.rpc("app_user_echo", { message_app_user: message });
     if (error) {
       this.handle_error(error);
     }
     return data;
   };
-
 
   /**
    * getAppUserCredits returns the credits of the app user.
@@ -281,11 +339,33 @@ export class SelasClient {
    * @example
    * const { data, error } = await this.getAppUserJobHistory({limit: 10, offset: 0});
    */
-  getAppUserJobHistory = async (args: { limit: number; offset: number }) => {
+  getAppUserJobHistory = async (limit: number, offset: number ) => {
     const { data, error } = await this.rpc("app_user_get_job_history_detail", {
-      p_limit: args.limit,
-      p_offset: args.offset,
+      p_limit: limit,
+      p_offset: offset,
     });
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
+  };
+
+  /**
+   * getServiceConfigCost returns the cost of a service given a configuration. It is useful to try it before posting a job.
+   * @param service_name - The name of the service.
+   * @param job_config - The configuration of the job.
+   * @returns the result of the rpc call as a json object.
+   * @example
+   * const { data, error } = await this.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
+   * @throws an error if the service name is invalid.
+   */
+  getServiceConfigCost = async (service_name: string, job_config: string ) => {
+    const service_id = this.services.find(service => service.name === service_name)['id'];
+    if (!service_id) {
+      throw new Error("Invalid model name")
+    }    
+    const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
+                                                                                 p_config: job_config});
     if (error) {
       this.handle_error(error);
     }
@@ -298,8 +378,8 @@ export class SelasClient {
    * @param job_config - the configuration of the job.
    * @returns the id of the job.
    */
-  postJob = async (args: { service_name: string; job_config: object}) => {
-    const service = this.services.find(service => service.name === args.service_name);
+  postJob = async (service_name: string, job_config: object) => {
+    const service = this.services.find(service => service.name === service_name);
     if (!service) {
       throw new Error("Invalid model name")
     }
@@ -307,10 +387,25 @@ export class SelasClient {
     
     const { data, error } = await this.rpc("post_job", {
       p_service_id: service["id"],
-      p_job_config: JSON.stringify(args.job_config),
+      p_job_config: JSON.stringify(job_config),
       p_worker_filter: this.worker_filter,
     });
     return { data, error };
+  };
+
+  /**
+   * Get the result of a job.
+   * @param job_id - the id of the job.
+   * @returns a json object containing the result of the job.
+   * @example
+   * const { data, error } = await this.getResult({job_id: response.data});
+   */
+  getResult = async (job_id: string) => {
+    const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
 
   /**
@@ -320,38 +415,13 @@ export class SelasClient {
    * @example
    *  client.subscribeToJob({job_id: response.data, callback: function (data) { console.log(data); }});
    */
-  subscribeToJob = async (args: { job_id: string; callback: (result: object) => void }) => {
+  subscribeToJob = async (job_id: string, callback: (result: object) => void ) => {
     const client = new Pusher("ed00ed3037c02a5fd912", {
       cluster: "eu",
     });
 
-    const channel = client.subscribe(`job-${args.job_id}`);
-    channel.bind("result", args.callback);
-  };
-
-  getServiceConfigCost = async (args: { service_name: string; job_config: string }) => {
-    const service_id = this.services.find(service => service.name === args.service_name)['id'];
-    if (!service_id) {
-      throw new Error("Invalid model name")
-    }    
-    const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
-                                                                                 p_config: args.job_config});
-    if (error) {
-      this.handle_error(error);
-    }
-    return data;
-  };
-
-  // method that change a PatchConfig into an addOnConfig
-  private patchConfigToAddonConfig = (patch_config: PatchConfig) => {
-    return {
-      id : this.add_ons.find(add_on => add_on.name === patch_config.name).id,
-      config : {
-        alpha_unet: patch_config.alpha_unet,
-        alpha_text_encoder: patch_config.alpha_text_encoder,
-        steps: patch_config.steps,
-      }
-    }
+    const channel = client.subscribe(`job-${job_id}`);
+    channel.bind("result", callback);
   };
 
   /**
@@ -418,23 +488,40 @@ export class SelasClient {
       nsfw_filter: args?.nsfw_filter || false,
       add_ons : add_ons
     };
-    const response = await this.postJob({
-      service_name: service_name,
-      job_config: config,
-    });
+    const response = await this.postJob(service_name,config);
 
     return response;
   };
 
-  //return the number of active worker
-  getCountActiveWorker = async () => {
-    const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
-    if (error) {
-      this.handle_error(error);
+  /**
+   * patchConfigToAddonConfig - convert a patch config to the correct format for the add-on config
+   * @param patch_config - the patch config
+   * @returns the add-on config
+   * @private
+   */
+  private patchConfigToAddonConfig = (patch_config: PatchConfig) => {
+    return {
+      id : this.add_ons.find(add_on => add_on.name === patch_config.name).id,
+      config : {
+        alpha_unet: patch_config.alpha_unet,
+        alpha_text_encoder: patch_config.alpha_text_encoder,
+        steps: patch_config.steps,
+      }
     }
-    return data;
   };
 
+  /**
+   * runPatchTrainer - train a patch
+   * @param dataset - the dataset to train the patch
+   * @param patch_name - the name of the patch
+   * @param args - the arguments
+   * @param args.service_name - the name of the service on which the patch will be trained
+   * @param args.description - the description of the patch
+   * @param args.learning_rate - the learning rate
+   * @param args.steps - the number of steps to train the patch
+   * @param args.rank - the rank of the patch
+   * @returns a json object with the id and the cost of the job
+   */
   runPatchTrainer = async (
     dataset: TrainingImage[],
     patch_name: string,
@@ -476,31 +563,40 @@ export class SelasClient {
       rank: args?.rank || 4,
     };
 
-    const response = await this.postJob({
-      service_name: service_name,
-      job_config: trainerConfig,
-    });
+    const response = await this.postJob(service_name, trainerConfig);
     return response;
   };
 
-  // call the rpc app_user_share_add_on
-  shareAddOn = async (args: {add_on_name: string,app_user_external_id: string}) => {
-    const add_on_id = this.add_ons.find(add_on => add_on.name === args.add_on_name).id;
+  /**
+   * shareAddOn - share an add-on with another user of the same application
+   * @param args - the arguments
+   * @param args.add_on_name - the name of the add-on to share
+   * @param args.app_user_external_id - the external id of the user to share the add-on with
+   */
+  shareAddOn = async (add_on_name: string,app_user_external_id: string) => {
+    const my_add_on = this.add_ons.find(add_on => add_on.name === add_on_name);
 
-    if (!add_on_id) {
-      throw new Error(`The add-on ${args.add_on_name} does not exist`);
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
     }
 
-    const { data, error } = await this.rpc("app_user_share_add_on", {p_add_on_id: add_on_id,
-      p_app_user_external_id: args.app_user_external_id});
+    const { data, error } = await this.rpc("app_user_share_add_on", {p_add_on_id: my_add_on.id,
+      p_app_user_external_id: app_user_external_id});
     if (error) {
       this.handle_error(error);
     }
     return data;
  };
 
-  getResult = async (job_id: string) => {
-    const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
+  /**
+   * getCountActiveWorker returns the number of active workers, depending on the worker_filter used.
+   * @returns the number of active workers.
+   * @example
+   * const count = await selas.getCountActiveWorker();
+   * console.log(count);
+   */
+  getCountActiveWorker = async () => {
+    const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
     if (error) {
       this.handle_error(error);
     }

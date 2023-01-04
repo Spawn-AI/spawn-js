@@ -19,7 +19,7 @@ describe("testing selas-js", () => {
         }
       );
       expect(selas).not.toBeNull();
-      let data = await selas.echo({message : "hello"});
+      let data = await selas.echo("hello");
       expect (data).not.toBeNull();
       expect (data).toBe("hello");
     });
@@ -36,7 +36,7 @@ describe("testing selas-js", () => {
     });
 
     test("getAppUserJobHistoryDetail", async() => {
-        const data = await selas.getAppUserJobHistory({limit: 10, offset: 0});
+        const data = await selas.getAppUserJobHistory(10, 0);
         expect (data).not.toBeNull();
     });
 
@@ -68,7 +68,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.runStableDiffusion("A flying banana",{patches: [PatchConfig("f-compatch")]});
+      const data = await selas.runStableDiffusion("A flying banana",{patches: [PatchConfig("f-compopatch")]});
       expect (data).not.toBeNull();
 
     });
@@ -97,7 +97,7 @@ describe("testing selas-js", () => {
           translate_prompt: false,
           nsfw_filter: false,
         };
-        const data = await selas.getServiceConfigCost({ service_name: "stable-diffusion-1-5", job_config: JSON.stringify(config)});
+        const data = await selas.getServiceConfigCost("stable-diffusion-1-5",JSON.stringify(config));
         expect(data).toBeDefined();
       });
 
@@ -144,7 +144,7 @@ describe("testing selas-js", () => {
         },
       ];
 
-      const data = await selas.runPatchTrainer(dataset, "f-compoutch");
+      const data = await selas.runPatchTrainer(dataset, "f-compopatch");
       expect(data).toBeDefined();
 
     });
@@ -158,7 +158,7 @@ describe("testing selas-js", () => {
           app_user_token: process.env.TEST_APP_USER_TOKEN!
         }
       );
-      const data = await selas.shareAddOn({ app_user_external_id: "Jacques" , add_on_name: 'f-compatch' });
+      const data = await selas.shareAddOn('f-compopatch', 'Jacques');
       expect(data).toBeDefined();
     });
     
