@@ -38,7 +38,7 @@ export type PatchConfig = {
   name: string;
   alpha_text_encoder: number;
   alpha_unet: number;
-  steps: number ;
+  steps: number;
 };
 
 /**
@@ -49,7 +49,7 @@ export type PatchConfig = {
  * @param learning_rate - Learning rate to use for the training.
  * @param steps - Number of steps for the training of the patch.
  * @param rank - Size of the patch to train.
-  */
+ */
 export type PatchTrainerConfig = {
   dataset: any[];
   patch_name: string;
@@ -60,7 +60,12 @@ export type PatchTrainerConfig = {
 };
 
 //Create an object of type PatchConfig
-export function PatchConfig(name: string, alpha_text_encoder?: number,alpha_unet?: number,steps?: number): PatchConfig {
+export function PatchConfig(
+  name: string,
+  alpha_text_encoder?: number,
+  alpha_unet?: number,
+  steps?: number
+): PatchConfig {
   return {
     name: name,
     alpha_text_encoder: alpha_text_encoder || 1.0,
@@ -68,7 +73,6 @@ export function PatchConfig(name: string, alpha_text_encoder?: number,alpha_unet
     steps: steps || 100,
   };
 }
-
 
 /**
  * StableDiffusionConfig is the configuration for the stable diffusion job.
@@ -87,7 +91,7 @@ export function PatchConfig(name: string, alpha_text_encoder?: number,alpha_unet
  * @param translate_prompt - Whether to translate the prompt.
  * @param nsfw_filter - Whether to filter nsfw images.
  * @param seed - Seed to use for the job (optional).
- * @example - 
+ * @example -
  *    const config: StableDiffusionConfig = {
  *    steps: 28,
  *    skip_steps: 0,
@@ -107,7 +111,13 @@ export type StableDiffusionConfig = {
   steps: number;
   skip_steps: number;
   batch_size: 1 | 2 | 4 | 8 | 16;
-  sampler: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep";
+  sampler:
+    | "plms"
+    | "ddim"
+    | "k_lms"
+    | "k_euler"
+    | "k_euler_a"
+    | "dpm_multistep";
   guidance_scale: number;
   width: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
   height: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
@@ -194,19 +204,21 @@ export class SelasClient {
    * @private
    */
   private handle_error = (error: any) => {
-    if (error.code === '') {
-      throw new Error("The database cannot be reached. Contact the administrator.");
+    if (error.code === "") {
+      throw new Error(
+        "The database cannot be reached. Contact the administrator."
+      );
     }
-    if (error.message === "Invalid API key"){
+    if (error.message === "Invalid API key") {
       throw new Error("The API key is invalid. Contact the administrator.");
     }
-    if (error.code === '22P02'){
+    if (error.code === "22P02") {
       throw new Error("The credentials are not correct.");
     }
-    if (error.code === 'P0001'){
+    if (error.code === "P0001") {
       throw new Error(error.message);
     }
-  }
+  };
 
   /**
    * rpc is a wrapper around the supabase rpc function usable by the SelasClient.
@@ -237,16 +249,20 @@ export class SelasClient {
    * @throws a typescript error
    */
   test_connection = async () => {
-    const { data, error } =  await this.rpc("app_user_echo", {message_app_user: "check"});
+    const { data, error } = await this.rpc("app_user_echo", {
+      message_app_user: "check",
+    });
     if (error) {
       this.handle_error(error);
     }
-    if (data){
+    if (data) {
       if (String(data) !== "check") {
-        throw new Error("There is a problem with the database. Contact the administrator.");
+        throw new Error(
+          "There is a problem with the database. Contact the administrator."
+        );
       }
     }
-  }
+  };
 
   /**
    * getServiceList is a function to get the list of services available to this app_user.
@@ -289,18 +305,19 @@ export class SelasClient {
    * await this.setUserID();
    */
   setUserID = async () => {
-    const { data, error } = await this.supabase.rpc("app_user_get_id",{
+    const { data, error } = await this.supabase.rpc("app_user_get_id", {
       p_app_id: this.app_id,
       p_key: this.key,
       p_app_user_external_id: this.app_user_external_id,
-      p_app_user_token: this.app_user_token});
+      p_app_user_token: this.app_user_token,
+    });
     if (error) {
       throw new Error(error.message);
     }
     if (data) {
       this.app_user_id = String(data);
     }
-  }
+  };
 
   /**
    * echo is a test function to test the rpc call.
@@ -309,8 +326,10 @@ export class SelasClient {
    * @example
    * const { data, error } = await selas.echo({message: "hello"});
    */
-  echo = async (message: string ) => {
-    const { data, error } =  await this.rpc("app_user_echo", { message_app_user: message });
+  echo = async (message: string) => {
+    const { data, error } = await this.rpc("app_user_echo", {
+      message_app_user: message,
+    });
     if (error) {
       this.handle_error(error);
     }
@@ -339,7 +358,7 @@ export class SelasClient {
    * @example
    * const { data, error } = await selas.getAppUserJobHistory({limit: 10, offset: 0});
    */
-  getAppUserJobHistory = async (limit: number, offset: number ) => {
+  getAppUserJobHistory = async (limit: number, offset: number) => {
     const { data, error } = await this.rpc("app_user_get_job_history_detail", {
       p_limit: limit,
       p_offset: offset,
@@ -359,13 +378,17 @@ export class SelasClient {
    * const { data, error } = await selas.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
    * @throws an error if the service name is invalid.
    */
-  getServiceConfigCost = async (service_name: string, job_config: string ) => {
-    const service_id = this.services.find(service => service.name === service_name)['id'];
+  getServiceConfigCost = async (service_name: string, job_config: string) => {
+    const service_id = this.services.find(
+      (service) => service.name === service_name
+    )["id"];
     if (!service_id) {
-      throw new Error("Invalid model name")
-    }    
-    const { data, error } = await this.supabase.rpc("get_service_config_cost_client", {p_service_id: service_id,
-                                                                                 p_config: job_config});
+      throw new Error("Invalid model name");
+    }
+    const { data, error } = await this.supabase.rpc(
+      "get_service_config_cost_client",
+      { p_service_id: service_id, p_config: job_config }
+    );
     if (error) {
       this.handle_error(error);
     }
@@ -379,18 +402,22 @@ export class SelasClient {
    * @returns the id of the job.
    */
   private postJob = async (service_name: string, job_config: object) => {
-    const service = this.services.find(service => service.name === service_name);
+    const service = this.services.find(
+      (service) => service.name === service_name
+    );
     if (!service) {
-      throw new Error("Invalid model name")
+      throw new Error("Invalid model name");
     }
 
-    
     const { data, error } = await this.rpc("post_job", {
       p_service_id: service["id"],
       p_job_config: JSON.stringify(job_config),
       p_worker_filter: this.worker_filter,
     });
-    return { data, error };
+    if (error) {
+      this.handle_error(error);
+    }
+    return data;
   };
 
   /**
@@ -401,7 +428,9 @@ export class SelasClient {
    * const { data, error } = await selas.getResult({job_id: response.data});
    */
   getResult = async (job_id: string) => {
-    const { data, error } = await this.rpc("app_user_get_job_result", {p_job_id: job_id});
+    const { data, error } = await this.rpc("app_user_get_job_result", {
+      p_job_id: job_id,
+    });
     if (error) {
       this.handle_error(error);
     }
@@ -415,7 +444,10 @@ export class SelasClient {
    * @example
    *  client.subscribeToJob({job_id: response.data, callback: function (data) { console.log(data); }});
    */
-  subscribeToJob = async (job_id: string, callback: (result: object) => void ) => {
+  subscribeToJob = async (
+    job_id: string,
+    callback: (result: object) => void
+  ) => {
     const client = new Pusher("ed00ed3037c02a5fd912", {
       cluster: "eu",
     });
@@ -441,39 +473,70 @@ export class SelasClient {
    * @param args.image_format - the format of the generated image. It can be "png" or "jpeg".
    * @param args.nsfw_filter - if true, the image will be filtered to remove NSFW content. It can be useful if you want to generate images for a public website.
    * @param args.translate_prompt - if true, the prompt will be translated to English before being used by the algorithm. It can be useful if you want to generate images in a language that is not English.
-   * @param args.patches - a list of patches to be applied to the image. 
+   * @param args.patches - a list of patches to be applied to the image.
    */
-  runStableDiffusion = async (prompt: string, args?: {service_name?: string, steps?: number, skip_steps?: number, 
-    batch_size?: 1 | 2 | 4 | 8 | 16, sampler?: "plms" | "ddim" | "k_lms" | "k_euler" | "k_euler_a" | "dpm_multistep", 
-    guidance_scale?: number, width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, 
-    height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768, negative_prompt?: string, 
-    image_format?: "png" | "jpeg" | "avif" | "webp", translate_prompt?: boolean, nsfw_filter?: boolean,
-    patches?: PatchConfig[]}) => {
-
+  runStableDiffusion = async (
+    prompt: string,
+    args?: {
+      service_name?: string;
+      steps?: number;
+      skip_steps?: number;
+      batch_size?: 1 | 2 | 4 | 8 | 16;
+      sampler?:
+        | "plms"
+        | "ddim"
+        | "k_lms"
+        | "k_euler"
+        | "k_euler_a"
+        | "dpm_multistep";
+      guidance_scale?: number;
+      width?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
+      height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
+      negative_prompt?: string;
+      image_format?: "png" | "jpeg" | "avif" | "webp";
+      translate_prompt?: boolean;
+      nsfw_filter?: boolean;
+      patches?: PatchConfig[];
+    }
+  ) => {
     const service_name = args?.service_name || "stable-diffusion-2-1-base";
     // check if the model name has stable-diffusion as an interface
-    if (!this.services.find(service => service.name === service_name)) {
+    if (!this.services.find((service) => service.name === service_name)) {
       throw new Error(`The service ${service_name} does not exist`);
     }
-    const service_interface = this.services.find(service => service.name === service_name).interface;
+    const service_interface = this.services.find(
+      (service) => service.name === service_name
+    ).interface;
     if (service_interface !== "stable-diffusion") {
-      throw new Error(`The service ${service_name} does not have the stable-diffusion interface`);
+      throw new Error(
+        `The service ${service_name} does not have the stable-diffusion interface`
+      );
     }
 
     // check if the add on is available for this service
     for (const patch of args?.patches || []) {
-      if (!this.add_ons.find(add_on => add_on.name === patch.name)) {
+      if (!this.add_ons.find((add_on) => add_on.name === patch.name)) {
         throw new Error(`The add-on ${patch.name} does not exist`);
       }
-      let service = this.add_ons.find(add_on => add_on.name === patch.name).service_name;
+      let service = this.add_ons.find(
+        (add_on) => add_on.name === patch.name
+      ).service_name;
       console.log(service);
-      if (!this.add_ons.find(add_on => add_on.name === patch.name).service_name.includes(service_name)) {
-        throw new Error(`The service ${service_name} does not have the add-on ${patch.name}`);
+      if (
+        !this.add_ons
+          .find((add_on) => add_on.name === patch.name)
+          .service_name.includes(service_name)
+      ) {
+        throw new Error(
+          `The service ${service_name} does not have the add-on ${patch.name}`
+        );
       }
     }
 
-    let add_ons = args?.patches?.map(patch => this.patchConfigToAddonConfig(patch));
-    
+    let add_ons = args?.patches?.map((patch) =>
+      this.patchConfigToAddonConfig(patch)
+    );
+
     const config: StableDiffusionConfig = {
       steps: args?.steps || 28,
       skip_steps: args?.skip_steps || 0,
@@ -487,9 +550,9 @@ export class SelasClient {
       image_format: args?.image_format || "jpeg",
       translate_prompt: args?.translate_prompt || false,
       nsfw_filter: args?.nsfw_filter || false,
-      add_ons : add_ons
+      add_ons: add_ons,
     };
-    const response = await this.postJob(service_name,config);
+    const response = await this.postJob(service_name, config);
 
     return response;
   };
@@ -502,13 +565,13 @@ export class SelasClient {
    */
   private patchConfigToAddonConfig = (patch_config: PatchConfig) => {
     return {
-      id : this.add_ons.find(add_on => add_on.name === patch_config.name).id,
-      config : {
+      id: this.add_ons.find((add_on) => add_on.name === patch_config.name).id,
+      config: {
         alpha_unet: patch_config.alpha_unet,
         alpha_text_encoder: patch_config.alpha_text_encoder,
         steps: patch_config.steps,
-      }
-    }
+      },
+    };
   };
 
   /**
@@ -554,8 +617,9 @@ export class SelasClient {
       throw new Error(`The add-on ${patch_name} already exists`);
     }
 
-
-    let is_creating = await this.rpc("app_user_is_creating_add_on", {p_add_on_name: patch_name});
+    let is_creating = await this.rpc("app_user_is_creating_add_on", {
+      p_add_on_name: patch_name,
+    });
     if (is_creating.data) {
       throw new Error(`There is already an ${patch_name} add-on being created`);
     }
@@ -578,20 +642,79 @@ export class SelasClient {
    * @param add_on_name - the name of the add-on to share
    * @param app_user_external_id - the external id of the user to share the add-on with
    */
-  shareAddOn = async (add_on_name: string,app_user_external_id: string) => {
-    const my_add_on = this.add_ons.find(add_on => add_on.name === add_on_name);
+  shareAddOn = async (add_on_name: string, app_user_external_id: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
+    );
 
     if (!my_add_on) {
       throw new Error(`The add-on ${add_on_name} does not exist`);
     }
 
-    const { data, error } = await this.rpc("app_user_share_add_on", {p_add_on_id: my_add_on.id,
-      p_app_user_external_id: app_user_external_id});
+    const { data, error } = await this.rpc("app_user_share_add_on", {
+      p_add_on_id: my_add_on.id,
+      p_app_user_external_id: app_user_external_id,
+    });
     if (error) {
       this.handle_error(error);
     }
     return data;
- };
+  };
+
+  /**
+   * deleteAddOn - delete an add-on that you own
+   * @param add_on_name - the name of the add-on to delete
+   * @returns true if the add-on was deleted
+   * @throws an error if not
+   */
+  deleteAddOn = async (add_on_name: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
+    );
+
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
+    }
+
+    const { data, error } = await this.rpc("app_user_delete_add_on", {
+      p_add_on_id: my_add_on.id,
+    });
+
+    if (error) {
+      this.handle_error(error);
+    }
+
+    return data;
+  };
+
+  /**
+   * renameAddOn - rename an add-on that you own
+   * @param add_on_name 
+   * @param new_add_on_name 
+   * @returns true if the add-on was renamed
+   */
+  renameAddOn = async (add_on_name: string, new_add_on_name: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
+    );
+
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
+    }
+
+    const { data, error } = await this.rpc("app_user_rename_add_on", {
+      p_add_on_id: my_add_on.id,
+      p_new_name: new_add_on_name,
+    });
+
+    await this.getAddOnList();
+
+    if (error) {
+      this.handle_error(error);
+    }
+
+    return data;
+  };
 
   /**
    * getCountActiveWorker returns the number of active workers, depending on the worker_filter used.
@@ -601,14 +724,14 @@ export class SelasClient {
    * console.log(count);
    */
   getCountActiveWorker = async () => {
-    const { data, error } = await this.supabase.rpc("get_active_worker_count", {p_worker_filter: this.worker_filter});
+    const { data, error } = await this.supabase.rpc("get_active_worker_count", {
+      p_worker_filter: this.worker_filter,
+    });
     if (error) {
       this.handle_error(error);
     }
     return data;
   };
-
-
 }
 
 /**
@@ -636,7 +759,7 @@ export const createSelasClient = async (
 ) => {
   const SUPABASE_URL = "https://lgwrsefyncubvpholtmh.supabase.co";
   const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const selas = new SelasClient(
