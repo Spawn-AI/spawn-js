@@ -176,7 +176,7 @@ describe("testing selas-js", () => {
     });
     const data = await selas.renameAddOn("f-compote", "f-compo");
     expect(data).toBeDefined();
-  });   
+  });
 
   test("getResult", async () => {
     selas = await createSelasClient({
