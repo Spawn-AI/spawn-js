@@ -212,15 +212,15 @@ getAppUserJobHistory = async (limit: number, offset: number)
 You can manage the user's add-on by using the following methods:
 
 ```js
-const is_renamed = await selas.renameAddOn('User1/landscape add-on', 'forest add-on');
+const is_renamed = await selas.renameAddOn('landscape add-on', 'forest add-on');
 
-const is_shared = await selas.shareAddOn('User1/forest add-on', 'Benoit');
+const is_shared = await selas.shareAddOn('forest add-on', 'Benoit');
 
-const is_deleted = await selas.deleteAddOn('User1/forest add-on');
+const is_deleted = await selas.deleteAddOn('forest add-on');
 ```
 
 
 ## Documentation
 
-For more information about the Selas Node module, please refer to the [Selas Node documentation](https://selas.ai/docs/selas-node).
+For more information about the Selas js module, please refer to the [Selas Node documentation](https://selas.ai/docs/selas-node).
 
