@@ -155,7 +155,7 @@ describe("testing selas-js", () => {
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.shareAddOn("f-deca", "hello");
+    const data = await selas.shareAddOn("f-compote3", "Bertrand");
     expect(data).toBeDefined();
   });
 
@@ -177,7 +177,7 @@ describe("testing selas-js", () => {
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.renameAddOn("f-compote", "f-compo");
+    const data = await selas.renameAddOn("f-compote2", "f-compote3");
     expect(data).toBeDefined();
   });
 

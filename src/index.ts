@@ -882,13 +882,6 @@ export class SelasClient {
       throw new Error(`The add-on ${add_on_name} does not exist`);
     }
 
-    const { data, error } = await this.rpc("app_user_rename_add_on", {
-      p_add_on_id: my_add_on.id,
-      p_new_name: new_add_on_name,
-    });
-
-    await this.getAddOnList();
-
     // check if the patch name is already in add_ons
     if (this.add_ons.find((add_on) => add_on.name === new_add_on_name)) {
       throw new Error(`The add-on ${new_add_on_name} already exists`);
@@ -901,6 +894,12 @@ export class SelasClient {
       throw new Error(`There is already an ${new_add_on_name} add-on being created`);
     }
 
+    const { data, error } = await this.rpc("app_user_rename_add_on", {
+      p_add_on_id: my_add_on.id,
+      p_new_name: new_add_on_name,
+    });
+
+    await this.getAddOnList();
 
 
     if (error) {
