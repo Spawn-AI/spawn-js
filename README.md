@@ -219,7 +219,6 @@ const is_shared = await selas.shareAddOn('forest add-on', 'Benoit');
 const is_deleted = await selas.deleteAddOn('forest add-on');
 ```
 
-
 ## Documentation
 
 For more information about the Selas js module, please refer to the [Selas Node documentation](https://selas.ai/docs/selas-node).

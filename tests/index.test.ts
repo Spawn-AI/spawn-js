@@ -3,7 +3,6 @@ import {
   createSelasClient,
   SelasClient,
   StableDiffusionConfig,
-  PatchConfig,
 } from "../src/index";
 
 import * as dotenv from "dotenv";
@@ -38,6 +37,12 @@ describe("testing selas-js", () => {
   });
 
   test("getAppUserJobHistoryDetail", async () => {
+    selas = await createSelasClient({
+      app_id: process.env.TEST_APP_ID!,
+      key: process.env.TEST_APP_KEY!,
+      app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
+      app_user_token: process.env.TEST_APP_USER_TOKEN!,
+    });
     const data = await selas.getAppUserJobHistory(10, 0);
     expect(data).not.toBeNull();
   });
@@ -65,9 +70,7 @@ describe("testing selas-js", () => {
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.runStableDiffusion("A flying banana", {
-      patches: [PatchConfig("f-compopatch")],
-    });
+    const data = await selas.runStableDiffusion("A flying banana");
     expect(data).not.toBeNull();
   });
 

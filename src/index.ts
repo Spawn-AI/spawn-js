@@ -889,6 +889,20 @@ export class SelasClient {
 
     await this.getAddOnList();
 
+    // check if the patch name is already in add_ons
+    if (this.add_ons.find((add_on) => add_on.name === new_add_on_name)) {
+      throw new Error(`The add-on ${new_add_on_name} already exists`);
+    }
+
+    let is_creating = await this.rpc("app_user_is_creating_add_on", {
+      p_add_on_name: new_add_on_name,
+    });
+    if (is_creating.data) {
+      throw new Error(`There is already an ${new_add_on_name} add-on being created`);
+    }
+
+
+
     if (error) {
       this.handle_error(error);
     }
