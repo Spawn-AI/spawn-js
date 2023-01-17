@@ -282,12 +282,12 @@ export class SelasClient {
   };
 
   /**
-   * getAddOnList is a function to get the list of add-ons available to this app_user.
-   * @returns the list of add-ons.
+   * updateAddOnList is a function to update the list of add-ons available to this app_user.
+   * @returns nothing
    * @example
-   * const add_ons = await this.getAddOnList();
+   * await this.updateAddOnList();
    */
-  getAddOnList = async () => {
+  updateAddOnList = async () => {
     const { data, error } = await this.rpc("app_user_get_add_ons", {});
     if (error) {
       this.handle_error(error);
@@ -295,7 +295,23 @@ export class SelasClient {
     if (data) {
       this.add_ons = data;
     }
-    return data;
+  };
+
+  /**
+   * getAddOnList is a function to get the list of add-ons available to this app_user.
+   * @returns 
+   */
+  getAddOnList = (public_add_ons? : boolean) => {
+    // if not public_add_ons
+    if (!public_add_ons) {
+      public_add_ons = false;
+    }
+    if (public_add_ons) {
+      return this.add_ons
+    }
+    else {
+      return this.add_ons.filter(add_on => add_on.creator === this.app_user_external_id);
+    }
   };
 
   /**
@@ -721,7 +737,7 @@ export class SelasClient {
       );
     }
 
-    await this.getAddOnList();
+    await this.updateAddOnList();
 
     // check if the patch name is in add_ons
     if (!this.add_ons.find((add_on) => add_on.name === patch_name)) {
@@ -790,7 +806,7 @@ export class SelasClient {
       );
     }
 
-    await this.getAddOnList();
+    await this.updateAddOnList();
 
     // check if the patch name is already in add_ons
     if (this.add_ons.find((add_on) => add_on.name === patch_name)) {
@@ -899,7 +915,7 @@ export class SelasClient {
       p_new_name: new_add_on_name,
     });
 
-    await this.getAddOnList();
+    await this.updateAddOnList();
 
 
     if (error) {
@@ -969,7 +985,7 @@ export const createSelasClient = async (
   await selas.test_connection();
 
   await selas.getServiceList();
-  await selas.getAddOnList();
+  await selas.updateAddOnList();
 
   return selas;
 };

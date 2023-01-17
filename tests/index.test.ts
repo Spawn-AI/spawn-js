@@ -59,7 +59,7 @@ describe("testing selas-js", () => {
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.getAddOnList();
+    const data = selas.getAddOnList();
     expect(data).not.toBeNull();
   });
 
@@ -70,7 +70,16 @@ describe("testing selas-js", () => {
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.runStableDiffusion("A flying banana");
+    const data = await selas.runStableDiffusion("A flying banana",{
+      patches: [
+        {
+          name: 'Skippy Jack/f-boopboop',
+          alpha_text_encoder: 0.5,
+          alpha_unet: 0.5,
+          steps: 1000,
+        },
+      ],
+    });
     expect(data).not.toBeNull();
   });
 

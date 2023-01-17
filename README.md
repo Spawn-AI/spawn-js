@@ -47,7 +47,7 @@ let services = await client.getServiceList();
 ```
 To know what add-ons are available to this application user on the Selas platform, you can use the getAddonList method. It will return a list of add-ons.
 ```js
-let services = await client.getAddonList();
+let services = client.getAddonList();
 ```
 
 Credits are necessary to run jobs on the Selas platform. To know how many credits are available to this application user on the Selas platform, you can use the getAppUserCredits method. It will return the number of credits.
