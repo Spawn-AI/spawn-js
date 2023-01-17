@@ -183,7 +183,7 @@ export class SelasClient {
     this.key = key;
     this.app_user_external_id = app_user_external_id;
     this.app_user_token = app_user_token;
-    this.worker_filter = worker_filter || { branch: "main" };
+    this.worker_filter = worker_filter || { branch: "prod" };
 
     this.app_user_id = "";
     this.services = [];
@@ -470,6 +470,11 @@ export class SelasClient {
 
     const channel = client.subscribe(`job-${job_id}`);
     channel.bind("result", callback);
+    channel.bind("job-started", callback);
+    channel.bind("dataset-downloaded", callback);
+    channel.bind("training-started", callback);
+    channel.bind("training-progress", callback);
+    channel.bind("training-finished", callback);
   };
 
   /**
