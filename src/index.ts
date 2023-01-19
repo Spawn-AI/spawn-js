@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import Pusher from "pusher-js";
+// @ts-ignore
+import Pusher from "pusher-client";
 
 /**
  * WorkerFilter is a filter to select workers.
@@ -460,21 +461,27 @@ export class SelasClient {
    * @example
    *  client.subscribeToJob({job_id: response.data, callback: function (data) { console.log(data); }});
    */
-  subscribeToJob = async (
-    job_id: string,
-    callback: (result: object) => void
-  ) => {
+  subscribeToJob = async (job_id: string, callback: (result: object) => void ) => {
     const client = new Pusher("ed00ed3037c02a5fd912", {
       cluster: "eu",
     });
 
+    client.connection.connectionCallbacks['close'] = (_:any) => {
+      //pass
+    };
+    
+
     const channel = client.subscribe(`job-${job_id}`);
-    channel.bind("result", callback);
-    channel.bind("job-started", callback);
-    channel.bind("dataset-downloaded", callback);
-    channel.bind("training-started", callback);
-    channel.bind("training-progress", callback);
-    channel.bind("training-finished", callback);
+
+    const fn : (result: object) => void = function (data) {
+      callback(data);
+      if ("result" in data) {
+        client.unsubscribe(`job-${job_id}`);
+        client.disconnect();
+      }
+    };
+
+    channel.bind("result", fn);
   };
 
   /**
