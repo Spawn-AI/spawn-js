@@ -636,7 +636,8 @@ export class SelasClient {
       translate_prompt?: boolean;
       nsfw_filter?: boolean;
       patches?: PatchConfig[];
-    }
+    },
+    callback? : (result: Object) => void
   ) => {
     const service_name = args?.service_name || "stable-diffusion-2-1-base";
     // check if the model name has stable-diffusion as an interface
@@ -651,6 +652,11 @@ export class SelasClient {
         `The service ${service_name} does not have the stable-diffusion interface`
       );
     }
+
+    if (callback == null){
+      callback = function (data) {console.log(data);};
+    }
+
 
     // check if the add on is available for this service
     for (const patch of args?.patches || []) {
@@ -692,7 +698,12 @@ export class SelasClient {
       add_ons: add_ons,
     };
     const response = await this.postJob(service_name, config);
-
+    if (response){
+      if ("job_id" in response){
+        const result = await this.subscribeToJob(String(response['job_id']),callback);
+        return result;
+      }
+    }
     return response;
   };
 
@@ -802,7 +813,8 @@ export class SelasClient {
       learning_rate?: number;
       steps?: number;
       rank?: number;
-    }
+    },
+    callback? : (result: Object) => void
   ) => {
     const service_name = args?.service_name || "patch_trainer_v1";
     // check if the model name has stable-diffusion as an interface
@@ -816,6 +828,10 @@ export class SelasClient {
       throw new Error(
         `The service ${service_name} does not have the train-patch-stable-diffusion interface`
       );
+    }
+
+    if (callback == null){
+      callback = function (data) {console.log(data);};
     }
 
     await this.updateAddOnList();
@@ -842,6 +858,12 @@ export class SelasClient {
     };
 
     const response = await this.postJob(service_name, trainerConfig);
+    if (response){
+      if ("job_id" in response){
+        const result = await this.subscribeToJob(String(response['job_id']),callback);
+        return result;
+      }
+    }
     return response;
   };
 
