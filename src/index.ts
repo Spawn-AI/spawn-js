@@ -134,14 +134,14 @@ export type StableDiffusionConfig = {
 };
 
 /**
- * SelasClient is the client to use to interact with the Selas API.
+ * SpawnClient is the client to use to interact with the spawn API.
  * @param supabase - The supabase client to use.
  * @param app_id - The app id to use.
  * @param key - The key to use.
  * @param app_user_id - The app user id to use.
  * @param app_user_token - The app user token to use.
  */
-export class SelasClient {
+export class SpawnClient {
   supabase: SupabaseClient;
   app_id: string;
   key: string;
@@ -162,7 +162,7 @@ export class SelasClient {
    * @param worker_filter
    *
    * @example
-   * selas = await createSelasClient(
+   * spawn = await createSpawnClient(
    *    {
    *      app_id: process.env.TEST_APP_ID!,
    *      key: process.env.TEST_APP_KEY!,
@@ -186,17 +186,17 @@ export class SelasClient {
     this.app_user_token = app_user_token;
     this.worker_filter = worker_filter || { branch: "prod" };
 
-    this.app_user_id = "";
+    this.app_user_id = '';
     this.services = [];
     this.add_ons = [];
   }
 
   /**
-   * handle_error is a function to handle the errors returned by the Selas API.
+   * handle_error is a function to handle the errors returned by the spawn API.
    * @param error - The error to handle.
    * @example
    * try {
-   *   await selas.rpc("test", {});
+   *   await spawn.rpc("test", {});
    * } catch (error) {
    *  this.handle_error(error);
    * }
@@ -222,7 +222,7 @@ export class SelasClient {
   };
 
   /**
-   * rpc is a wrapper around the supabase rpc function usable by the SelasClient.
+   * rpc is a wrapper around the supabase rpc function usable by the SpawnClient.
    * @param fn - The name of the function to call.
    * @param params - The parameters to pass to the function.
    * @returns the result of the rpc call.
@@ -341,7 +341,7 @@ export class SelasClient {
    * @param message - The message to echo.
    * @returns the result of the rpc call.
    * @example
-   * const { data, error } = await selas.echo({message: "hello"});
+   * const { data, error } = await spawn.echo({message: "hello"});
    */
   echo = async (message: string) => {
     const { data, error } = await this.rpc("app_user_echo", {
@@ -357,7 +357,7 @@ export class SelasClient {
    * getAppUserCredits returns the credits of the app user.
    * @returns the result of the rpc call.
    * @example
-   * const { data, error } = await selas.getAppUserCredits();
+   * const { data, error } = await spawn.getAppUserCredits();
    */
   getAppUserCredits = async () => {
     const { data, error } = await this.rpc("app_user_get_credits", {});
@@ -373,7 +373,7 @@ export class SelasClient {
    * @param offset - The offset to start from.
    * @returns the result of the rpc call as a json object.
    * @example
-   * const { data, error } = await selas.getAppUserJobHistory({limit: 10, offset: 0});
+   * const { data, error } = await spawn.getAppUserJobHistory({limit: 10, offset: 0});
    */
   getAppUserJobHistory = async (limit: number, offset: number) => {
     const { data, error } = await this.rpc("app_user_get_job_history_detail", {
@@ -392,7 +392,7 @@ export class SelasClient {
    * @param job_config - The configuration of the job.
    * @returns the result of the rpc call as a json object.
    * @example
-   * const { data, error } = await selas.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
+   * const { data, error } = await spawn.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
    * @throws an error if the service name is invalid.
    */
   getServiceConfigCost = async (service_name: string, job_config: string) => {
@@ -442,7 +442,7 @@ export class SelasClient {
    * @param job_id - the id of the job.
    * @returns a json object containing the result of the job.
    * @example
-   * const { data, error } = await selas.getResult({job_id: response.data});
+   * const { data, error } = await spawn.getResult({job_id: response.data});
    */
   getResult = async (job_id: string) => {
     const { data, error } = await this.rpc("app_user_get_job_result", {
@@ -485,7 +485,7 @@ export class SelasClient {
   };
 
   /**
-   * Get the cost a StableDiffusion job on Selas API.
+   * Get the cost a StableDiffusion job on spawn API.
    *
    * @param prompt - the description of the image to be generated
    * @param args.negative_prompt - description of the image to be generated, but with negative words like "ugly", "blurry" or "low quality"
@@ -596,7 +596,7 @@ export class SelasClient {
   };
 
   /**
-   * Run a StableDiffusion job on Selas API. The job will be run on the first available worker.
+   * Run a StableDiffusion job on spawn API. The job will be run on the first available worker.
    *
    * @param prompt - the description of the image to be generated
    * @param args.negative_prompt - description of the image to be generated, but with negative words like "ugly", "blurry" or "low quality"
@@ -963,7 +963,7 @@ export class SelasClient {
    * getCountActiveWorker returns the number of active workers, depending on the worker_filter used.
    * @returns the number of active workers.
    * @example
-   * const count = await selas.getCountActiveWorker();
+   * const count = await spawn.getCountActiveWorker();
    * console.log(count);
    */
   getCountActiveWorker = async () => {
@@ -978,11 +978,11 @@ export class SelasClient {
 }
 
 /**
- * createSelasClient creates a SelasClient.
+ * createSpawnClient creates a SpawnClient.
  * @param credentials - The credentials to use.
- * @returns the SelasClient.
+ * @returns the SpawnClient.
  * @example
- * selas = await createSelasClient(
+ * spawn = await createSpawnClient(
  *   {
  *    app_id: process.env.TEST_APP_ID!,
  *    key: process.env.TEST_APP_KEY!,
@@ -991,7 +991,7 @@ export class SelasClient {
  *   }
  * );
  */
-export const createSelasClient = async (
+export const createSpawnClient = async (
   credentials: {
     app_id: string;
     key: string;
@@ -1005,7 +1005,7 @@ export const createSelasClient = async (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnd3JzZWZ5bmN1YnZwaG9sdG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk0MDE0MzYsImV4cCI6MTk4NDk3NzQzNn0.o-QO3JKyJ5E-XzWRPC9WdWHY8WjzEFRRnDRSflLzHsc";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const selas = new SelasClient(
+  const spawn = new SpawnClient(
     supabase,
     credentials.app_id,
     credentials.key,
@@ -1014,14 +1014,14 @@ export const createSelasClient = async (
     worker_filter
   );
 
-  await selas.setUserID();
+  await spawn.setUserID();
 
-  await selas.test_connection();
+  await spawn.test_connection();
 
-  await selas.getServiceList();
-  await selas.updateAddOnList();
+  await spawn.getServiceList();
+  await spawn.updateAddOnList();
 
-  return selas;
+  return spawn;
 };
 
-export default createSelasClient;
+export default createSpawnClient;

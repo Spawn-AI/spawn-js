@@ -1,28 +1,28 @@
-# Selas JS
+# spawn JS
 
-A Node.js implementation of the Selas protocol to let your customers use our AI services through your application.
+A Node.js implementation of the spawn protocol to let your customers use our AI services through your application.
 
 ## Overview
 
-The Selas JS module is a Node.js implementation of the Selas protocol. It allows you to run jobs on the Selas platform from your javascript code. The Selas Node module is available on [npm](https://www.npmjs.com/package/@selas/selas-js). You can find the source code for the Selas JS module on [GitHub](https://github.com/SelasAI/selas-js). The Selas js module is licensed under the [MIT License](https://opensource.org/licenses/MIT). The Selas Node module is currently in beta, so please report any bugs or issues you encounter.
+The spawn JS module is a Node.js implementation of the spawn protocol. It allows you to run jobs on the spawn platform from your javascript code. The spawn Node module is available on [npm](https://www.npmjs.com/package/@spawn/spawn-js). You can find the source code for the spawn JS module on [GitHub](https://github.com/SpawnAI/spawn-js). The spawn js module is licensed under the [MIT License](https://opensource.org/licenses/MIT). The spawn Node module is currently in beta, so please report any bugs or issues you encounter.
 
 ## Installation
 
-To install the Selas js module, you can run the following command in your terminal:
+To install the spawn js module, you can run the following command in your terminal:
 ```bash
-npm install @selas/selas-js
+npm install @spawn/spawn-js
 ```
 
 ## Usage
 
-To use the Selas js module, you need to require it in your JavaScript code and create a Selas client object. To get started, you need to create a Selas account and create an app. You can find more information about creating a Selas account and creating an app in the [Selas documentation](https://selas.ai/docs/). Once you have created an app, you can create a new user for you customer using the Selas Node Client, set the associated token and let your customer use our services.
+To use the spawn js module, you need to require it in your JavaScript code and create a spawn client object. To get started, you need to create a spawn account and create an app. You can find more information about creating a spawn account and creating an app in the [spawn documentation](https://spawn.ai/docs/). Once you have created an app, you can create a new user for you customer using the spawn Node Client, set the associated token and let your customer use our services.
 
 
 ```js
-const Selas = require('@selas/selas-js');
+const spawn = require('@spawn/spawn-js');
 
 
-const client = await createSelasClient({
+const client = await createSpawnClient({
     app_id: process.env.TEST_APP_ID!,
     key: process.env.TEST_APP_KEY!,
     app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
@@ -32,25 +32,25 @@ const client = await createSelasClient({
 
 ### Usage of IA services
 
-Selas-js have all the needed methods for running jobs on the Selas platform.
+spawn-js have all the needed methods for running jobs on the spawn platform.
 
-To know how many workers are active on the Selas platform, you can use the getCountActiveWorker method. It will return the number of workers for each service.
+To know how many workers are active on the spawn platform, you can use the getCountActiveWorker method. It will return the number of workers for each service.
 ```js
 let workers = await client.getCountActiveWorker();
 ```
 
 #### Fetching informations about what you can do
 
-To know what services are available to this application user on the Selas platform, you can use the getServiceList method. It will return a list of services.
+To know what services are available to this application user on the spawn platform, you can use the getServiceList method. It will return a list of services.
 ```js
 let services = await client.getServiceList();
 ```
-To know what add-ons are available to this application user on the Selas platform, you can use the getAddonList method. It will return a list of add-ons.
+To know what add-ons are available to this application user on the spawn platform, you can use the getAddonList method. It will return a list of add-ons.
 ```js
 let services = client.getAddonList();
 ```
 
-Credits are necessary to run jobs on the Selas platform. To know how many credits are available to this application user on the Selas platform, you can use the getAppUserCredits method. It will return the number of credits.
+Credits are necessary to run jobs on the spawn platform. To know how many credits are available to this application user on the spawn platform, you can use the getAppUserCredits method. It will return the number of credits.
 ```js
 let credits = await client.getAppUserCredits();
 ```
@@ -115,7 +115,7 @@ The response object will contain the job_id of the job that was created. You can
 const result = await client.getResult(response['job_id']);
 ```
 
-You can also subscribe to the job by calling the subscribeToJob method on the Selas client object and passing in an object with the job_id and a callback function as arguments. The callback function will be called whenever new data is available for the job:
+You can also subscribe to the job by calling the subscribeToJob method on the spawn client object and passing in an object with the job_id and a callback function as arguments. The callback function will be called whenever new data is available for the job:
 
 ```js
 const response = await client.runStableDiffusion("a cute cat");
@@ -135,7 +135,7 @@ if (response) {
 The following example shows how to run a patch creation job with minimal parameters.
 
 ```js
-    selas = await createSelasClient(
+    spawn = await createSpawnClient(
       {
         app_id: process.env.TEST_APP_ID!,
         key: process.env.TEST_APP_KEY!,
@@ -163,14 +163,14 @@ The following example shows how to run a patch creation job with minimal paramet
           "fcompo style, a drawing of a woman holding a baseball bat, inspired by Kusumi Morikage, pixiv, shin hanga, fully clothed. painting of sexy, あかさたなは on twitter, pin on anime, initial d",
       },
     ];
-    const data = await selas.runPatchTrainer(dataset, "f-compo style");
+    const data = await spawn.runPatchTrainer(dataset, "f-compo style");
     expect(data).toBeDefined();
 ```
 
 To get the cost of a job without posting it, you can use the costPatchTrainer method. Its syntax is the same as the runPatchTrainer method.
 
 ```js
-const data = await selas.costPatchTrainer(dataset, "f-compo style");
+const data = await spawn.costPatchTrainer(dataset, "f-compo style");
 ```
 
 To train a patch, you need a list of images and label that will be used to train the patch. They will alter the stable diffusion model to generate images that are similar to the images you provide. The label is used to describe the images you provide. It can be a sentence or a list of words.
@@ -210,14 +210,14 @@ getAppUserJobHistory = async (limit: number, offset: number)
 You can manage the user's add-on by using the following methods:
 
 ```js
-const is_renamed = await selas.renameAddOn('landscape add-on', 'forest add-on');
+const is_renamed = await spawn.renameAddOn('landscape add-on', 'forest add-on');
 
-const is_shared = await selas.shareAddOn('forest add-on', 'Benoit');
+const is_shared = await spawn.shareAddOn('forest add-on', 'Benoit');
 
-const is_deleted = await selas.deleteAddOn('forest add-on');
+const is_deleted = await spawn.deleteAddOn('forest add-on');
 ```
 
 ## Documentation
 
-For more information about the Selas js module, please refer to the [Selas Node documentation](https://selas.ai/docs/selas-node).
+For more information about the spawn js module, please refer to the [spawn Node documentation](https://spawn.ai/docs/spawn-node).
 

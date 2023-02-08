@@ -1,7 +1,7 @@
 // import the postJob function from "../src/index"
 import {
-  createSelasClient,
-  SelasClient,
+  createSpawnClient,
+  SpawnClient,
   StableDiffusionConfig,
 } from "../src/index";
 
@@ -9,68 +9,68 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-describe("testing selas-js", () => {
-  let selas: SelasClient;
+describe("testing spawn-js", () => {
+  let spawn: SpawnClient;
 
   test("creation of client", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    expect(selas).not.toBeNull();
-    let data = await selas.echo("hello");
+    expect(spawn).not.toBeNull();
+    let data = await spawn.echo("hello");
     expect(data).not.toBeNull();
     expect(data).toBe("hello");
   });
 
   /**
-   * Send a message to the selas server and wait for the same message to be received.
+   * Send a message to the spawn server and wait for the same message to be received.
    * @param message - The message to send.
    * @returns a text message which is the same as the input message.
    */
 
   test("getAppUserCredits", async () => {
-    const data = await selas.getAppUserCredits();
+    const data = await spawn.getAppUserCredits();
     expect(data).not.toBeNull();
   });
 
   test("getAppUserJobHistoryDetail", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.getAppUserJobHistory(10, 0);
+    const data = await spawn.getAppUserJobHistory(10, 0);
     expect(data).not.toBeNull();
   });
 
   test("get service list", async () => {
-    const data = await selas.getServiceList();
+    const data = await spawn.getServiceList();
     expect(data).not.toBeNull();
   });
 
   test("get add on list", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = selas.getAddOnList();
+    const data = spawn.getAddOnList();
     expect(data).not.toBeNull();
   });
 
   test("postJob", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.runStableDiffusion("A flying banana",{
+    const data = await spawn.runStableDiffusion("A flying banana",{
       patches: [
         {
           name: 'Skippy Jack/f-boopboop',
@@ -84,7 +84,7 @@ describe("testing selas-js", () => {
   });
 
   test("Get a config's cost for a job", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
@@ -105,7 +105,7 @@ describe("testing selas-js", () => {
       translate_prompt: false,
       nsfw_filter: false,
     };
-    const data = await selas.getServiceConfigCost(
+    const data = await spawn.getServiceConfigCost(
       "stable-diffusion-1-5",
       JSON.stringify(config)
     );
@@ -113,18 +113,18 @@ describe("testing selas-js", () => {
   });
 
   test("get the number of worker for this filter", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.getCountActiveWorker();
+    const data = await spawn.getCountActiveWorker();
     expect(data).toBeDefined();
   });
 
   test("Create a patch", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
@@ -153,51 +153,51 @@ describe("testing selas-js", () => {
       },
     ];
 
-    const data = await selas.runPatchTrainer(dataset, "f-compot7");
+    const data = await spawn.runPatchTrainer(dataset, "f-compot7");
     expect(data).toBeDefined();
   });
 
   test("Share an add on", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.shareAddOn("f-compote3", "Bertrand");
+    const data = await spawn.shareAddOn("f-compote3", "Bertrand");
     expect(data).toBeDefined();
   });
 
   test("Delete an add on", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.deleteAddOn("f-compo");
+    const data = await spawn.deleteAddOn("f-compo");
     expect(data).toBeDefined();
   });
 
   test("Rename an add on", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.renameAddOn("f-compote2", "f-compote3");
+    const data = await spawn.renameAddOn("f-compote2", "f-compote3");
     expect(data).toBeDefined();
   });
 
   test("getResult", async () => {
-    selas = await createSelasClient({
+    spawn = await createSpawnClient({
       app_id: process.env.TEST_APP_ID!,
       key: process.env.TEST_APP_KEY!,
       app_user_external_id: process.env.TEST_APP_USER_EXTERNAL_ID!,
       app_user_token: process.env.TEST_APP_USER_TOKEN!,
     });
-    const data = await selas.getResult("c97ac10a-f647-4ab7-a531-9a8708df1c8d");
+    const data = await spawn.getResult("c97ac10a-f647-4ab7-a531-9a8708df1c8d");
     expect(data).not.toBeNull();
   });
 });
