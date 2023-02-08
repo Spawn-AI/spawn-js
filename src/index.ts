@@ -43,39 +43,6 @@ export type PatchConfig = {
 };
 
 /**
- * PatchTrainerConfig is the configuration for the patch trainer job.
- * @param dataset - Dataset to use for the job.
- * @param patch_name - Name of the patch to train.
- * @param description - Description of the patch to train.
- * @param learning_rate - Learning rate to use for the training.
- * @param steps - Number of steps for the training of the patch.
- * @param rank - Size of the patch to train.
- */
-export type PatchTrainerConfig = {
-  dataset: any[];
-  patch_name: string;
-  description: string;
-  learning_rate: number;
-  steps: number;
-  rank: number;
-};
-
-//Create an object of type PatchConfig
-export function PatchConfig(
-  name: string,
-  alpha_text_encoder?: number,
-  alpha_unet?: number,
-  steps?: number
-): PatchConfig {
-  return {
-    name: name,
-    alpha_text_encoder: alpha_text_encoder || 1.0,
-    alpha_unet: alpha_unet || 1.0,
-    steps: steps || 100,
-  };
-}
-
-/**
  * StableDiffusionConfig is the configuration for the stable diffusion job.
  * @param steps - Number of steps to run the job for.
  * @param skip_steps - Number of steps to skip before starting the job.
@@ -134,12 +101,31 @@ export type StableDiffusionConfig = {
 };
 
 /**
+ * PatchTrainerConfig is the configuration for the patch trainer job.
+ * @param dataset - Dataset to use for the job.
+ * @param patch_name - Name of the patch to train.
+ * @param description - Description of the patch to train.
+ * @param learning_rate - Learning rate to use for the training.
+ * @param steps - Number of steps for the training of the patch.
+ * @param rank - Size of the patch to train.
+ */
+export type PatchTrainerConfig = {
+  dataset: any[];
+  patch_name: string;
+  description: string;
+  learning_rate: number;
+  steps: number;
+  rank: number;
+};
+
+/**
  * SpawnClient is the client to use to interact with the spawn API.
  * @param supabase - The supabase client to use.
  * @param app_id - The app id to use.
  * @param key - The key to use.
  * @param app_user_id - The app user id to use.
  * @param app_user_token - The app user token to use.
+ * @param worker_filter - Filter with regex to select workers.
  */
 export class SpawnClient {
   supabase: SupabaseClient;
@@ -192,11 +178,11 @@ export class SpawnClient {
   }
 
   /**
-   * handle_error is a function to handle the errors returned by the spawn API.
+   * handle_error is a function to handle the errors returned by the Spawn API.
    * @param error - The error to handle.
    * @example
    * try {
-   *   await spawn.rpc("test", {});
+   *   await spawn.owner_rpc("test", {});
    * } catch (error) {
    *  this.handle_error(error);
    * }
@@ -219,6 +205,13 @@ export class SpawnClient {
     if (error.code === "P0001") {
       throw new Error(error.message);
     }
+    if (error.code === "23505") {
+      throw new Error("This object already exists.");
+    } else
+      throw new Error(
+        "An unexpected error occured. Contact the administrator. " +
+          error.message
+      );
   };
 
   /**
@@ -265,13 +258,15 @@ export class SpawnClient {
     }
   };
 
+
   /**
-   * getServiceList is a function to get the list of services available to this app_user.
-   * @returns the list of services.
+   * updateServiceList is a function to update the list of services available to this app_user.
+   * @returns nothing
    * @example
-   * const services = await this.getServiceList();
+   * await this.updateServiceList();
+   * @throws a typescript error
    */
-  getServiceList = async () => {
+  updateServiceList = async () => {
     const { data, error } = await this.rpc("app_user_get_services", {});
     if (error) {
       this.handle_error(error);
@@ -279,7 +274,16 @@ export class SpawnClient {
     if (data) {
       this.services = data;
     }
-    return data;
+  };
+
+  /**
+   * getServiceList is a function to get the list of services available to this app_user.
+   * @returns the list of services.
+   * @example
+   * const services = await this.getServiceList();
+   */
+  getServiceList = async () => {
+    return this.services;
   };
 
   /**
@@ -386,31 +390,101 @@ export class SpawnClient {
     return data;
   };
 
+  /***************  ADD-ONS METHODS  ***************/
+
   /**
-   * getServiceConfigCost returns the cost of a service given a configuration. It is useful to try it before posting a job.
-   * @param service_name - The name of the service.
-   * @param job_config - The configuration of the job.
-   * @returns the result of the rpc call as a json object.
-   * @example
-   * const { data, error } = await spawn.getServiceConfigCost({service_name: SERVICE_NAME, job_config: JOB_CONFIG});
-   * @throws an error if the service name is invalid.
+   * shareAddOn - share an add-on with another user of the same application
+   * @param add_on_name - the name of the add-on to share
+   * @param app_user_external_id - the external id of the user to share the add-on with
    */
-  getServiceConfigCost = async (service_name: string, job_config: string) => {
-    const service_id = this.services.find(
-      (service) => service.name === service_name
-    )["id"];
-    if (!service_id) {
-      throw new Error("Invalid model name");
-    }
-    const { data, error } = await this.supabase.rpc(
-      "get_service_config_cost_client",
-      { p_service_id: service_id, p_config: job_config }
+  shareAddOn = async (add_on_name: string, app_user_external_id: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
     );
+
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
+    }
+
+    const { data, error } = await this.rpc("app_user_share_add_on", {
+      p_add_on_id: my_add_on.id,
+      p_app_user_external_id: app_user_external_id,
+    });
     if (error) {
       this.handle_error(error);
     }
     return data;
   };
+
+  /**
+   * deleteAddOn - delete an add-on that you own
+   * @param add_on_name - the name of the add-on to delete
+   * @returns true if the add-on was deleted
+   * @throws an error if not
+   */
+  deleteAddOn = async (add_on_name: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
+    );
+
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
+    }
+
+    const { data, error } = await this.rpc("app_user_delete_add_on", {
+      p_add_on_id: my_add_on.id,
+    });
+
+    if (error) {
+      this.handle_error(error);
+    }
+
+    return data;
+  };
+
+  /**
+   * renameAddOn - rename an add-on that you own
+   * @param add_on_name
+   * @param new_add_on_name
+   * @returns true if the add-on was renamed
+   */
+  renameAddOn = async (add_on_name: string, new_add_on_name: string) => {
+    const my_add_on = this.add_ons.find(
+      (add_on) => add_on.name === add_on_name
+    );
+
+    if (!my_add_on) {
+      throw new Error(`The add-on ${add_on_name} does not exist`);
+    }
+
+    // check if the patch name is already in add_ons
+    if (this.add_ons.find((add_on) => add_on.name === new_add_on_name)) {
+      throw new Error(`The add-on ${new_add_on_name} already exists`);
+    }
+
+    let is_creating = await this.rpc("app_user_is_creating_add_on", {
+      p_add_on_name: new_add_on_name,
+    });
+    if (is_creating.data) {
+      throw new Error(`There is already an ${new_add_on_name} add-on being created`);
+    }
+
+    const { data, error } = await this.rpc("app_user_rename_add_on", {
+      p_add_on_id: my_add_on.id,
+      p_new_name: new_add_on_name,
+    });
+
+    await this.updateAddOnList();
+
+
+    if (error) {
+      this.handle_error(error);
+    }
+
+    return data;
+  };
+
+  /***************  JOB METHODS  ***************/
 
   /**
    * Create a new job. This job will be executed by the workers of the app.
@@ -453,6 +527,8 @@ export class SpawnClient {
     }
     return data;
   };
+
+
 
   /**
    * Wait for the  the result of a job and returns it.
@@ -633,11 +709,12 @@ export class SpawnClient {
       height?: 384 | 448 | 512 | 575 | 768 | 640 | 704 | 768;
       negative_prompt?: string;
       image_format?: "png" | "jpeg" | "avif" | "webp";
+      seed?: number;
       translate_prompt?: boolean;
       nsfw_filter?: boolean;
       patches?: PatchConfig[];
-    },
-    callback? : (result: Object) => void
+      callback?: (result: Object) => void;
+    }
   ) => {
     const service_name = args?.service_name || "stable-diffusion-2-1-base";
     // check if the model name has stable-diffusion as an interface
@@ -652,11 +729,6 @@ export class SpawnClient {
         `The service ${service_name} does not have the stable-diffusion interface`
       );
     }
-
-    if (callback == null){
-      callback = function (data) {console.log(data);};
-    }
-
 
     // check if the add on is available for this service
     for (const patch of args?.patches || []) {
@@ -696,11 +768,13 @@ export class SpawnClient {
       translate_prompt: args?.translate_prompt || false,
       nsfw_filter: args?.nsfw_filter || false,
       add_ons: add_ons,
+      seed: args?.seed
     };
+    var current_callback = args?.callback || function (data) {console.log(data);};
     const response = await this.postJob(service_name, config);
     if (response){
       if ("job_id" in response){
-        const result = await this.subscribeToJob(String(response['job_id']),callback);
+        const result = await this.subscribeToJob(String(response['job_id']), current_callback);
         return result;
       }
     }
@@ -813,8 +887,8 @@ export class SpawnClient {
       learning_rate?: number;
       steps?: number;
       rank?: number;
+      callback?: (data: any) => void;
     },
-    callback? : (result: Object) => void
   ) => {
     const service_name = args?.service_name || "patch_trainer_v1";
     // check if the model name has stable-diffusion as an interface
@@ -828,10 +902,6 @@ export class SpawnClient {
       throw new Error(
         `The service ${service_name} does not have the train-patch-stable-diffusion interface`
       );
-    }
-
-    if (callback == null){
-      callback = function (data) {console.log(data);};
     }
 
     await this.updateAddOnList();
@@ -858,106 +928,18 @@ export class SpawnClient {
     };
 
     const response = await this.postJob(service_name, trainerConfig);
+
+    var current_callback = args?.callback || function (data) {console.log(data);};
+
     if (response){
       if ("job_id" in response){
-        const result = await this.subscribeToJob(String(response['job_id']),callback);
+        const result = await this.subscribeToJob(String(response['job_id']),current_callback);
         return result;
       }
     }
     return response;
   };
 
-  /**
-   * shareAddOn - share an add-on with another user of the same application
-   * @param add_on_name - the name of the add-on to share
-   * @param app_user_external_id - the external id of the user to share the add-on with
-   */
-  shareAddOn = async (add_on_name: string, app_user_external_id: string) => {
-    const my_add_on = this.add_ons.find(
-      (add_on) => add_on.name === add_on_name
-    );
-
-    if (!my_add_on) {
-      throw new Error(`The add-on ${add_on_name} does not exist`);
-    }
-
-    const { data, error } = await this.rpc("app_user_share_add_on", {
-      p_add_on_id: my_add_on.id,
-      p_app_user_external_id: app_user_external_id,
-    });
-    if (error) {
-      this.handle_error(error);
-    }
-    return data;
-  };
-
-  /**
-   * deleteAddOn - delete an add-on that you own
-   * @param add_on_name - the name of the add-on to delete
-   * @returns true if the add-on was deleted
-   * @throws an error if not
-   */
-  deleteAddOn = async (add_on_name: string) => {
-    const my_add_on = this.add_ons.find(
-      (add_on) => add_on.name === add_on_name
-    );
-
-    if (!my_add_on) {
-      throw new Error(`The add-on ${add_on_name} does not exist`);
-    }
-
-    const { data, error } = await this.rpc("app_user_delete_add_on", {
-      p_add_on_id: my_add_on.id,
-    });
-
-    if (error) {
-      this.handle_error(error);
-    }
-
-    return data;
-  };
-
-  /**
-   * renameAddOn - rename an add-on that you own
-   * @param add_on_name
-   * @param new_add_on_name
-   * @returns true if the add-on was renamed
-   */
-  renameAddOn = async (add_on_name: string, new_add_on_name: string) => {
-    const my_add_on = this.add_ons.find(
-      (add_on) => add_on.name === add_on_name
-    );
-
-    if (!my_add_on) {
-      throw new Error(`The add-on ${add_on_name} does not exist`);
-    }
-
-    // check if the patch name is already in add_ons
-    if (this.add_ons.find((add_on) => add_on.name === new_add_on_name)) {
-      throw new Error(`The add-on ${new_add_on_name} already exists`);
-    }
-
-    let is_creating = await this.rpc("app_user_is_creating_add_on", {
-      p_add_on_name: new_add_on_name,
-    });
-    if (is_creating.data) {
-      throw new Error(`There is already an ${new_add_on_name} add-on being created`);
-    }
-
-    const { data, error } = await this.rpc("app_user_rename_add_on", {
-      p_add_on_id: my_add_on.id,
-      p_new_name: new_add_on_name,
-    });
-
-    await this.updateAddOnList();
-
-
-    if (error) {
-      this.handle_error(error);
-    }
-
-    return data;
-  };
 
   /**
    * getCountActiveWorker returns the number of active workers, depending on the worker_filter used.
@@ -1018,7 +1000,7 @@ export const createSpawnClient = async (
 
   await spawn.test_connection();
 
-  await spawn.getServiceList();
+  await spawn.updateServiceList();
   await spawn.updateAddOnList();
 
   return spawn;
