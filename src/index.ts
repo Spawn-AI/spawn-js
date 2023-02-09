@@ -1005,5 +1005,3 @@ export const createSpawnClient = async (
 
   return spawn;
 };
-
-export default createSpawnClient;
