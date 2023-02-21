@@ -5,6 +5,8 @@ import {
   StableDiffusionConfig,
 } from "../src/index";
 
+import '@types/jest';
+
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -105,10 +107,16 @@ describe("testing spawn-js", () => {
       translate_prompt: false,
       nsfw_filter: false,
     };
-    const data = await spawn.getServiceConfigCost(
-      "stable-diffusion-1-5",
-      JSON.stringify(config)
-    );
+    const data = await spawn.costStableDiffusion("A flying banana",{
+      patches: [
+        {
+          name: 'Skippy Jack/f-boopboop',
+          alpha_text_encoder: 0.5,
+          alpha_unet: 0.5,
+          steps: 1000,
+        },
+      ],
+    });
     expect(data).toBeDefined();
   });
 

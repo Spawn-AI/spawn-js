@@ -21,7 +21,8 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": false
+    "experimentalDecorators": false,
+    "types": ["jest", "node"]
   },
   "files": [
     "src/index.ts"

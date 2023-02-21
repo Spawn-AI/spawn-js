@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 // @ts-ignore
-import Pusher from "pusher-client";
+import Pusher from "pusher-js";
 
 /**
  * WorkerFilter is a filter to select workers.
@@ -542,7 +542,7 @@ export class SpawnClient {
       cluster: "eu",
     });
 
-    client.connection.connectionCallbacks['close'] = (_:any) => {
+    client.connection.connectionCallbacks['closed'] = () => {
       //pass
     };
     
