@@ -111,6 +111,10 @@ export type StableDiffusionConfig = {
  */
 export type PatchTrainerConfig = {
   dataset: any[];
+
+  trigger_prompt: string;
+  use_synthetic_data: boolean;
+   
   patch_name: string;
   description: string;
   learning_rate: number;
@@ -813,6 +817,10 @@ export class SpawnClient {
     dataset: TrainingImage[],
     patch_name: string,
     args?: {
+      // For the dataset
+      trigger_prompt: string;
+      use_synthetic_data: boolean;
+      
       service_name?: string;
       description?: string;
       learning_rate?: number;
@@ -843,6 +851,8 @@ export class SpawnClient {
 
     const trainerConfig: PatchTrainerConfig = {
       dataset: dataset,
+      trigger_prompt: args?.trigger_prompt || "",
+      use_synthetic_data: args?.use_synthetic_data || true,
       patch_name: patch_name,
       description: args?.description || "",
       learning_rate: args?.learning_rate || 1e-4,
@@ -882,6 +892,10 @@ export class SpawnClient {
     dataset: TrainingImage[],
     patch_name: string,
     args?: {
+      // For the dataset
+      trigger_prompt: string;
+      use_synthetic_data: boolean;
+
       service_name?: string;
       description?: string;
       learning_rate?: number;
@@ -920,6 +934,8 @@ export class SpawnClient {
 
     const trainerConfig: PatchTrainerConfig = {
       dataset: dataset,
+      trigger_prompt: args?.trigger_prompt || "",
+      use_synthetic_data: args?.use_synthetic_data || true,
       patch_name: patch_name,
       description: args?.description || "",
       learning_rate: args?.learning_rate || 1e-4,
